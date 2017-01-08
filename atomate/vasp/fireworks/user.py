@@ -81,6 +81,7 @@ class OptimizeStepFW(Firework):
 #         job_type = job_type
 
         t = []
+
         if step_index:
             t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
             t.append(
