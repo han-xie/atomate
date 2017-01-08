@@ -13,23 +13,13 @@ from atomate.vasp.firetasks.parse_outputs import VaspToDbTask
 
 class MPRelaxSetEx(MPRelaxSet):
 
-    def __init__(self, structure, rm_incar_settings=[], **kwargs):
-        super(MPRelaxSet, self).__init__(
-            structure, MPRelaxSet.CONFIG, **kwargs)
-        self.rm_incar_settings = rm_incar_settings
-        self.rm_config_dict = {"INCAR": {}}
-        for k in self.rm_incar_settings:
-            if k in self.config_dict["INCAR"].keys():
-                self.rm_config_dict["INCAR"][
-                    k] = self.config_dict["INCAR"].pop(k, None)
-
     @property
     def kpoints(self):
         settings = self.user_kpoints_settings or self.config_dict["KPOINTS"]
         if settings.get('kpts'):
             return Kpoints.gamma_automatic(kpts=tuple(settings['kpts']))
         else:
-            return super(MPRelaxSet, self).kpoints()
+            return super(MPRelaxSet, self).kpoints
 
 
 @explicit_serialize
@@ -45,8 +35,8 @@ class WriteVaspRelaxFromStructure(FiretaskBase):
     """
 
     required_params = ["struct_dir"]
-    optional_params = ["user_incar_settings",
-                       "rm_incar_settings", "user_kpoints_settings"]
+    optional_params = ["force_gamma",
+                       "user_incar_settings", "user_kpoints_settings"]
 
     def run_task(self, fw_spec):
         struct_dir = self.get("struct_dir", ".")
@@ -57,8 +47,6 @@ class WriteVaspRelaxFromStructure(FiretaskBase):
                                "force_gamma", True),
                            user_incar_settings=self.get(
                                "user_incar_settings", {}),
-                           rm_incar_settings=self.get(
-                               "rm_incar_settings", []),
                            user_kpoints_settings=self.get(
                                "user_kpoints_settings", None))
         vis.write_input(".")
