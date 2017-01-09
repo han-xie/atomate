@@ -13,12 +13,10 @@ from atomate.vasp.firetasks.parse_outputs import VaspToDbTask
 
 class MPRelaxSetEx(MPRelaxSet):
 
-    def __init__(self, structure, rm_incar_settings=[],
-                 user_kpoints_settings={},  **kwargs):
+    def __init__(self, structure, rm_incar_settings=[], **kwargs):
         super(MPRelaxSet, self).__init__(
             structure, MPRelaxSet.CONFIG, **kwargs)
         self.rm_incar_settings = rm_incar_settings
-        self.user_kpoints_settings = user_kpoints_settings
         self.rm_config_dict = {"INCAR": {}}
         for k in self.rm_incar_settings:
             if k in self.config_dict["INCAR"].keys():
@@ -47,8 +45,8 @@ class WriteVaspRelaxFromStructure(FiretaskBase):
     """
 
     required_params = ["struct_dir"]
-    optional_params = ["force_gamma",
-                       "user_incar_settings", "user_kpoints_settings"]
+    optional_params = ["force_gamma", "rm_incar_settings",
+                       "user_kpoints_settings", "rm_incar_settings"]
 
     def run_task(self, fw_spec):
         struct_dir = self.get("struct_dir", ".")
@@ -57,6 +55,8 @@ class WriteVaspRelaxFromStructure(FiretaskBase):
         vis = MPRelaxSetEx(structure,
                            force_gamma=self.get(
                                "force_gamma", True),
+                           rm_incar_settings=self.get(
+                               "rm_incar_settings", []),
                            user_incar_settings=self.get(
                                "user_incar_settings", {}),
                            user_kpoints_settings=self.get(
@@ -93,17 +93,19 @@ class OptimizeStepFW(Firework):
 #         job_type = job_type
 
         t = []
-
+        rm_incar_settings = override_default_vasp_params.pop(
+            'rm_incar_settings', [])
         if step_index:
             t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
             t.append(
                 WriteVaspRelaxFromStructure(
-                    struct_dir='.', force_gamma=True,
+                    struct_dir='.', force_gamma=True, rm_incar_settings=rm_incar_settings,
                     **override_default_vasp_params)
             )
         else:
             vasp_input_set = vasp_input_set or MPRelaxSetEx(
-                structure, force_gamma=True, **override_default_vasp_params)
+                structure, force_gamma=True, rm_incar_settings=rm_incar_settings,
+                **override_default_vasp_params)
             t.append(WriteVaspFromIOSet(
                 structure=structure, vasp_input_set=vasp_input_set))
 
