@@ -13,10 +13,16 @@ from atomate.vasp.firetasks.parse_outputs import VaspToDbTask
 
 class MPRelaxSetEx(MPRelaxSet):
 
-    def __init__(self, structure, user_kpoints_settings={}, **kwargs):
-            super(MPRelaxSet, self).__init__(
-                structure, MPRelaxSet.CONFIG, **kwargs)
-            self.user_kpoints_settings = user_kpoints_settings
+    def __init__(self, structure, user_kpoints_settings={}, rm_incar_settings={}, **kwargs):
+        super(MPRelaxSet, self).__init__(
+            structure, MPRelaxSet.CONFIG, **kwargs)
+        self.user_kpoints_settings = user_kpoints_settings
+        self.rm_incar_settings = rm_incar_settings
+        self.rm_config_dict = {"INCAR": {}}
+        for k in self.rm_incar_settings:
+            if k in self.config_dict["INCAR"].keys():
+                self.rm_config_dict["INCAR"][
+                    k] = self.config_dict["INCAR"].pop(k, None)
 
     @property
     def kpoints(self):
