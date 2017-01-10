@@ -70,7 +70,7 @@ class OptimizeStepFW(Firework):
     def __init__(self, structure, step_index, name="Relax",
                  vasp_input_set=None, vasp_cmd="vasp",
                  override_default_vasp_params=None, ediffg=None,
-                 job_type="normal", db_file=None, **kwargs):
+                 job_type="normal", db_file=None, parents=None, **kwargs):
         """
         Standard structure optimization Firework.
         Args:
@@ -93,7 +93,6 @@ class OptimizeStepFW(Firework):
 
         t = []
         if step_index:
-            parents = step_index - 1
             t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
             t.append(
                 WriteVaspRelaxFromStructure(
@@ -101,7 +100,6 @@ class OptimizeStepFW(Firework):
                     **override_default_vasp_params)
             )
         else:
-            parents = None
             vasp_input_set = vasp_input_set or MPRelaxSetEx(
                 structure, force_gamma=True,
                 **override_default_vasp_params)
