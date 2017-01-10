@@ -16,6 +16,7 @@ class MPRelaxSetEx(MPRelaxSet):
     def __init__(self, structure, rm_incar_settings=[], **kwargs):
         super(MPRelaxSet, self).__init__(
             structure, MPRelaxSet.CONFIG, **kwargs)
+        self.kwargs = kwargs
         self.rm_incar_settings = rm_incar_settings
         self.rm_config_dict = {"INCAR": {}}
         for k in self.rm_incar_settings:
@@ -99,12 +100,14 @@ class OptimizeStepFW(Firework):
             t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
             t.append(
                 WriteVaspRelaxFromStructure(
-                    struct_dir='.', force_gamma=True, rm_incar_settings=rm_incar_settings,
+                    struct_dir='.', force_gamma=True,
+                    rm_incar_settings=rm_incar_settings,
                     **override_default_vasp_params)
             )
         else:
             vasp_input_set = vasp_input_set or MPRelaxSetEx(
-                structure, force_gamma=True, rm_incar_settings=rm_incar_settings,
+                structure, force_gamma=True,
+                rm_incar_settings=rm_incar_settings,
                 **override_default_vasp_params)
             t.append(WriteVaspFromIOSet(
                 structure=structure, vasp_input_set=vasp_input_set))
