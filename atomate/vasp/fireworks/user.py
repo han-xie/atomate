@@ -100,8 +100,7 @@ class OptimizeStepFW(Firework):
             t.append(WriteVaspFromIOSet(
                 structure=structure, vasp_input_set=vasp_input_set))
 
-        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, job_type=job_type,
-                                  max_force_threshold=0.25, ediffg=ediffg,
+        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, job_type=job_type, ediffg=ediffg,
                                   auto_npar=">>auto_npar<<"))
         t.append(PassCalcLocs(name=name))
         t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
