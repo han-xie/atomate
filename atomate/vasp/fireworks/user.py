@@ -105,7 +105,5 @@ class OptimizeStepFW(Firework):
                                   auto_npar=">>auto_npar<<"))
         t.append(PassCalcLocs(name=name))
         t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
-        super(OptimizeStepFW, self).__init__(
-            t, parents=parents, name="{}-{}-Step{}".format(
-                structure.composition.reduced_formula, name, 1 + step_index
-            ), **kwargs)
+        super(OptimizeStepFW, self).__init__(t, parents=parents, name="{}-{}-Step{}".format(
+            structure.composition.reduced_formula, name, 1 + step_index), **kwargs)
