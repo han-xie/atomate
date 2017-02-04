@@ -47,3 +47,6 @@ nosetests.xml
 
 # scratch files
 atomate/vasp/tests/scratch/*
+
+# user firework
+user.py
