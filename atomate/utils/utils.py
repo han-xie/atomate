@@ -268,30 +268,6 @@ def append_fw_wf(orig_wf, fw_wf):
     orig_wf.append_wf(new_wf, orig_wf.leaf_fw_ids)
 
 
-def remove_leaf_fws(orig_wf):
-    """
-    Remove the end nodes(last fireworks) from the given workflow.
-
-    Args:
-        orig_wf (Workflow): The original workflow object.
-
-    Returns:
-        Workflow : the new updated workflow.
-    """
-    wf_dict = orig_wf.as_dict()
-    all_parents = []
-    for i, f in enumerate(orig_wf.as_dict()["fws"]):
-        if f["fw_id"] in orig_wf.leaf_fw_ids:
-            parents = orig_wf.links.parent_links[int(f["fw_id"])]
-            all_parents.extend(parents)
-            del wf_dict["links"][str(f["fw_id"])]
-            del wf_dict["fws"][i]
-            for p in parents:
-                wf_dict["links"][str(p)] = []
-    new_wf = Workflow.from_dict(wf_dict)
-    return update_wf(new_wf)
-
-
 def load_class(modulepath, classname):
     """
     Load and return the class from the given module.
@@ -305,3 +281,65 @@ def load_class(modulepath, classname):
     """
     module = __import__(modulepath, globals(), locals(), [classname], 0)
     return getattr(module, classname)
+
+
+def remove_leaf_fws(orig_wf):
+    """
+    Remove the end nodes(last fireworks) from the given workflow.
+
+    Args:
+        orig_wf (Workflow): The original workflow object.
+
+    Returns:
+        Workflow : the new updated workflow.
+    """
+    return remove_fws(orig_wf, orig_wf.leaf_fw_ids)
+
+
+def remove_root_fws(orig_wf):
+    """
+    Remove the root nodes from the given workflow.
+
+    Args:
+        orig_wf (Workflow): The original workflow object.
+
+    Returns:
+        Workflow : the new updated workflow.
+    """
+    return remove_fws(orig_wf, orig_wf.root_fw_ids)
+
+
+def remove_fws(orig_wf, fw_ids):
+    """
+    Remove the fireworks corresponding to the input firework ids and update the workflow i.e the
+    parents of the removed fireworks become the parents of the orphaned fireworks.
+
+    Args:
+        orig_wf (Workflow): The original workflow object.
+        fw_ids (list): list of fw ids to remove.
+
+    Returns:
+        Workflow : the new updated workflow.
+    """
+    wf_dict = orig_wf.as_dict()
+    fws = wf_dict["fws"]
+
+    # remove fw_ids from the links dict and link their parents to their children.
+    for fid in fw_ids:
+        del wf_dict["links"][str(fid)]
+        # root node --> no parents
+        try:
+            parents = orig_wf.links.parent_links[int(fid)]
+        except KeyError:
+            parents = []
+        children = orig_wf.links[int(fid)]
+        for p in parents:
+            wf_dict["links"][str(p)].remove(fid)
+            wf_dict["links"][str(p)].extend(children)
+
+    # update the list of fireworks.
+    wf_dict["fws"] = [f for f in fws if f["fw_id"] not in fw_ids]
+
+    new_wf = Workflow.from_dict(wf_dict)
+
+    return update_wf(new_wf)

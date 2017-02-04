@@ -10,7 +10,7 @@ from atomate.utils.utils import get_meta_from_structure, get_fws_and_tasks, upda
 from atomate.vasp.firetasks.glue_tasks import CheckStability, CheckBandgap
 from atomate.vasp.firetasks.run_calc import RunVaspCustodian, RunVaspDirect, RunVaspFake
 from atomate.vasp.firetasks.write_inputs import ModifyIncar
-from atomate.vasp.config import ADD_NAMEFILE, SCRATCH_DIR, ADD_MODIFY_INCAR
+from atomate.vasp.config import ADD_NAMEFILE, SCRATCH_DIR, ADD_MODIFY_INCAR, GAMMA_VASP_CMD
 
 from pymatgen import Structure
 
@@ -169,6 +169,7 @@ def add_modify_incar(original_wf, modify_incar_params=None, fw_name_constraint=N
         wf_dict["fws"][idx_fw]["spec"]["_tasks"].insert(idx_t, ModifyIncar(**modify_incar_params).to_dict())
     return Workflow.from_dict(wf_dict)
 
+
 def modify_to_soc(original_wf, nbands, structure=None, modify_incar_params=None, fw_name_constraint=None):
     """
     Takes a regular workflow and transforms its VASP fireworkers that are specified with
@@ -214,6 +215,7 @@ def modify_to_soc(original_wf, nbands, structure=None, modify_incar_params=None,
 
     return Workflow.from_dict(wf_dict)
 
+
 def tag_fws(original_wf, tag, fw_name_constraint=None, task_name_constraint=None):
     """
     Tags Fireworker(s) of a Workflow; e.g. it can be used to run large-memory jobs on a separate queue.
@@ -233,6 +235,7 @@ def tag_fws(original_wf, tag, fw_name_constraint=None, task_name_constraint=None
         wf_dict["fws"][idx_fw]["spec"]["_fworker"] = tag
 
     return Workflow.from_dict(wf_dict)
+
 
 def add_wf_metadata(original_wf, structure):
     """
@@ -299,6 +302,7 @@ def add_modify_incar_envchk(original_wf, fw_name_constraint=None):
     """
     return add_modify_incar(original_wf, {"incar_update": ">>incar_update<<"}, fw_name_constraint=fw_name_constraint)
 
+
 def modify_to_soc(original_wf, nbands, structure=None, modify_incar_params=None, fw_name_constraint=None):
     """
     Takes a regular workflow and transforms its VASP fireworkers that are specified with
@@ -344,6 +348,7 @@ def modify_to_soc(original_wf, nbands, structure=None, modify_incar_params=None,
 
     return Workflow.from_dict(wf_dict)
 
+
 def tag_fws(original_wf, tag, fw_name_constraint=None):
     """
     Tags VASP Fworker(s) of a Workflow; e.g. it can be used to run large-memory jobs on a separate queue
@@ -363,6 +368,7 @@ def tag_fws(original_wf, tag, fw_name_constraint=None):
         wf_dict["fws"][idx_fw]["spec"]["_fworker"] = tag
 
     return Workflow.from_dict(wf_dict)
+
 
 def add_small_gap_multiply(original_wf, gap_cutoff, density_multiplier, fw_name_constraint=None):
     """
@@ -436,12 +442,13 @@ def add_tags(original_wf, tags_list):
         else:
             wf_dict["fws"][idx_fw]["spec"]["tags"] = tags_list
 
-    # Drone
-    for idx_fw, idx_t in get_fws_and_tasks(original_wf, task_name_constraint="VaspToDbTask"):
-        if "tags" in wf_dict["fws"][idx_fw]["spec"]["_tasks"][idx_t]["additional_fields"]:
-            wf_dict["fws"][idx_fw]["spec"]["_tasks"][idx_t]["additional_fields"]["tags"].extend(tags_list)
-        else:
-            wf_dict["fws"][idx_fw]["spec"]["_tasks"][idx_t]["additional_fields"]["tags"] = tags_list
+    # DB insertion tasks
+    for constraint in ["VaspToDbTask", "BoltztrapToDBTask"]:
+        for idx_fw, idx_t in get_fws_and_tasks(original_wf, task_name_constraint=constraint):
+            if "tags" in wf_dict["fws"][idx_fw]["spec"]["_tasks"][idx_t]["additional_fields"]:
+                wf_dict["fws"][idx_fw]["spec"]["_tasks"][idx_t]["additional_fields"]["tags"].extend(tags_list)
+            else:
+                wf_dict["fws"][idx_fw]["spec"]["_tasks"][idx_t]["additional_fields"]["tags"] = tags_list
 
     return Workflow.from_dict(wf_dict)
 
@@ -466,4 +473,20 @@ def add_common_powerups(wf, c):
     if c.get("ADD_MODIFY_INCAR", ADD_MODIFY_INCAR):
         wf = add_modify_incar(wf)
 
+    if c.get("GAMMA_VASP_CMD", GAMMA_VASP_CMD):
+        wf = use_gamma_vasp((wf),c.get("GAMMA_VASP_CMD", GAMMA_VASP_CMD))
+
     return wf
+
+
+def use_gamma_vasp(original_wf, gamma_vasp_cmd):
+    """
+    For all RunVaspCustodian tasks, add the desired scratch dir.
+
+    :param original_wf:
+    :param gamma_vasp_cmd: sets gamma_vasp_cmd. Supports env_chk
+    """
+    wf_dict = original_wf.to_dict()
+    for idx_fw, idx_t in get_fws_and_tasks(original_wf, task_name_constraint="RunVaspCustodian"):
+        wf_dict["fws"][idx_fw]["spec"]["_tasks"][idx_t]["gamma_vasp_cmd"] = gamma_vasp_cmd
+    return Workflow.from_dict(wf_dict)

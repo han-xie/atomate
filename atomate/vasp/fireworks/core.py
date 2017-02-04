@@ -20,8 +20,13 @@ from atomate.vasp.firetasks.write_inputs import *
 
 class OptimizeFW(Firework):
     def __init__(self, structure, name="structure optimization", vasp_input_set=None, vasp_cmd="vasp",
+<<<<<<< HEAD
                  override_default_vasp_params=None, ediffg=None,
                  job_type="double_relaxation_run", db_file=None, parents=None, **kwargs):
+=======
+                 override_default_vasp_params=None, ediffg=None, db_file=None,
+                 force_gamma=True, parents=None, **kwargs):
+>>>>>>> upstream/master
         """
         Standard structure optimization Firework.
 
@@ -37,13 +42,18 @@ class OptimizeFW(Firework):
             vasp_cmd (str): Command to run vasp.
             ediffg (float): Shortcut to set ediffg in certain jobs
             db_file (str): Path to file specifying db credentials.
+            force_gamma (bool): Force gamma centered kpoint generation
             parents (Firework): Parents of this particular Firework.
                 FW or list of FWS.
             \*\*kwargs: Other kwargs that are passed to Firework.__init__.
         """
         override_default_vasp_params = override_default_vasp_params or {}
+<<<<<<< HEAD
         vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=True, **override_default_vasp_params)
         job_type = job_type
+=======
+        vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=force_gamma,  **override_default_vasp_params)
+>>>>>>> upstream/master
 
         t = []
         t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
@@ -156,7 +166,8 @@ class NonSCFFW(Firework):
 
 class LepsFW(Firework):
     def __init__(self, structure, name="static dielectric", vasp_cmd="vasp", copy_vasp_outputs=True,
-                 db_file=None, parents=None, phonon=False, mode=None, displacement=None, **kwargs):
+                 db_file=None, parents=None, phonon=False, mode=None, displacement=None,
+                 user_incar_settings={}, **kwargs):
         """
         Standard static calculation Firework for dielectric constants using DFPT.
 
@@ -174,15 +185,18 @@ class LepsFW(Firework):
                 dielectric constant in the Raman tensor workflow.
             mode (int): normal mode index.
             displacement (float): displacement along the normal mode in Angstroms.
+            user_incar_settings (dict): Parameters in INCAR to override
             \*\*kwargs: Other kwargs that are passed to Firework.__init__.
         """
         t = []
         if parents:
             if copy_vasp_outputs:
                 t.append(CopyVaspOutputs(calc_loc=True, additional_files=["CHGCAR"], contcar_to_poscar=True))
-                t.append(WriteVaspStaticFromPrev(prev_calc_dir=".", lepsilon=True))
+                t.append(WriteVaspStaticFromPrev(prev_calc_dir=".", lepsilon=True,
+                other_params={'user_incar_settings': user_incar_settings}))
         else:
-            vasp_input_set = MPStaticSet(structure, lepsilon=True)
+            vasp_input_set = MPStaticSet(structure, lepsilon=True,
+                                         user_incar_settings = user_incar_settings)
             t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
 
         if phonon:
@@ -342,7 +356,7 @@ class MDFW(Firework):
 
 class BoltztrapFW(Firework):
     def __init__(self, structure, name="boltztrap", db_file=None, parents=None, scissor=0.0,
-                 soc=False, **kwargs):
+                 soc=False, additional_fields=None, **kwargs):
         """
         Run Boltztrap
 
@@ -354,11 +368,13 @@ class BoltztrapFW(Firework):
             scissor (float): if scissor > 0, apply scissor on the band structure so that new
                 band gap = scissor (in eV)
             soc (bool): whether the band structure is calculated with spin-orbit coupling
+            additional_fields (dict): fields added to the document such as user-defined tags or name, ids, etc
             \*\*kwargs: Other kwargs that are passed to Firework.__init__.
         """
+        additional_fields = additional_fields or {}
         t = [CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True),
              RunBoltztrap(scissor=scissor, soc=soc),
-             BoltztrapToDBTask(db_file=db_file),
+             BoltztrapToDBTask(db_file=db_file, additional_fields=additional_fields),
              PassCalcLocs(name=name)]
         super(BoltztrapFW, self).__init__(t, parents=parents, name="{}-{}".format(
             structure.composition.reduced_formula, name), **kwargs)
