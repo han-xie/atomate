@@ -20,13 +20,8 @@ from atomate.vasp.firetasks.write_inputs import *
 
 class OptimizeFW(Firework):
     def __init__(self, structure, name="structure optimization", vasp_input_set=None, vasp_cmd="vasp",
-<<<<<<< HEAD
-                 override_default_vasp_params=None, ediffg=None,
-                 job_type="double_relaxation_run", db_file=None, parents=None, **kwargs):
-=======
                  override_default_vasp_params=None, ediffg=None, db_file=None,
-                 force_gamma=True, parents=None, **kwargs):
->>>>>>> upstream/master
+                 job_type="double_relaxation_run", force_gamma=True, parents=None, **kwargs):
         """
         Standard structure optimization Firework.
 
@@ -48,12 +43,8 @@ class OptimizeFW(Firework):
             \*\*kwargs: Other kwargs that are passed to Firework.__init__.
         """
         override_default_vasp_params = override_default_vasp_params or {}
-<<<<<<< HEAD
-        vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=True, **override_default_vasp_params)
+        vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=force_gamma, **override_default_vasp_params)
         job_type = job_type
-=======
-        vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=force_gamma,  **override_default_vasp_params)
->>>>>>> upstream/master
 
         t = []
         t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
