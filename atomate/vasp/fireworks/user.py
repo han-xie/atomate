@@ -21,8 +21,7 @@ class MPRelaxSetEx(MPRelaxSet):
         self.rm_config_dict = {"INCAR": {}}
         for k in self.rm_incar_settings:
             if k in self.config_dict["INCAR"].keys():
-                self.rm_config_dict["INCAR"][
-                    k] = self.config_dict["INCAR"].pop(k, None)
+                self.rm_config_dict["INCAR"][k] = self.config_dict["INCAR"].pop(k, None)
 
     @property
     def kpoints(self):
@@ -46,22 +45,17 @@ class WriteVaspRelaxFromStructure(FiretaskBase):
     """
 
     required_params = ["struct_dir"]
-    optional_params = ["force_gamma", "rm_incar_settings",
-                       "user_kpoints_settings", "rm_incar_settings"]
+    optional_params = ["force_gamma", "rm_incar_settings", "user_kpoints_settings", "rm_incar_settings"]
 
     def run_task(self, fw_spec):
         struct_dir = self.get("struct_dir", ".")
         struct_file = os.path.join(struct_dir, "POSCAR")
         structure = Structure.from_file(struct_file)
         vis = MPRelaxSetEx(structure,
-                           force_gamma=self.get(
-                               "force_gamma", True),
-                           rm_incar_settings=self.get(
-                               "rm_incar_settings", []),
-                           user_incar_settings=self.get(
-                               "user_incar_settings", {}),
-                           user_kpoints_settings=self.get(
-                               "user_kpoints_settings", None))
+                           force_gamma=self.get("force_gamma", True),
+                           rm_incar_settings=self.get("rm_incar_settings", []),
+                           user_incar_settings=self.get("user_incar_settings", {}),
+                           user_kpoints_settings=self.get("user_kpoints_settings", None))
         vis.write_input(".")
 
 
@@ -110,8 +104,7 @@ class OptimizeStepFW(Firework):
                                   max_force_threshold=0.25, ediffg=ediffg,
                                   auto_npar=">>auto_npar<<"))
         t.append(PassCalcLocs(name=name))
-        t.append(VaspToDbTask(db_file=db_file,
-                              additional_fields={"task_label": name}))
+        t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
         super(OptimizeStepFW, self).__init__(
             t, parents=parents, name="{}-{}-Step{}".format(
                 structure.composition.reduced_formula, name, 1 + step_index
