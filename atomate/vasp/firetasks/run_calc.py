@@ -170,10 +170,8 @@ class RunVaspCustodian(FiretaskBase):
             stderr_file = "std_err.txt"
             scancel_terminator = ScancelJobStepTerminator(stderr_file)
             terminate_func = scancel_terminator.cancel_job_step
-            terminate_on_nonzero_returncode = False
         else:
             terminate_func = None
-            terminate_on_nonzero_returncode = True
 
         # initialize variables
         job_type = self.get("job_type", "normal")
@@ -214,8 +212,7 @@ class RunVaspCustodian(FiretaskBase):
 
         c = Custodian(handlers, jobs, validators=validators, max_errors=max_errors,
                       scratch_dir=scratch_dir, gzipped_output=gzip_output,
-                      terminate_func=terminate_func,
-                      terminate_on_nonzero_returncode=terminate_on_nonzero_returncode)
+                      terminate_func=terminate_func)
 
         c.run()
 
@@ -287,8 +284,7 @@ class RunVaspFake(FiretaskBase):
         defaults = {"ISPIN": 1, "ISMEAR": 1, "SIGMA": 0.2}
         for p in params_to_check:
             if user_incar.get(p, defaults.get(p)) != ref_incar.get(p, defaults.get(p)):
-                raise ValueError(
-                    "INCAR value of {} is inconsistent!".format(p))
+                raise ValueError("INCAR value of {} is inconsistent!".format(p))
 
         # check KPOINTS
         user_kpoints = Kpoints.from_file(os.path.join(os.getcwd(), "KPOINTS"))

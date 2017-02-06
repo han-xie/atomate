@@ -40,8 +40,7 @@ class WriteVaspRelaxFromStructure(FiretaskBase):
     Required params:
         (none)
     Optional params:
-        (documentation for all optional params can be found in
-        MPRelaxSetEx)
+        (documentation for all optional params can be found in MPRelaxSetEx)
     """
 
     required_params = ["struct_dir"]
@@ -88,17 +87,12 @@ class OptimizeStepFW(Firework):
         t = []
         if step_index:
             t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
-            t.append(
-                WriteVaspRelaxFromStructure(
-                    struct_dir='.', force_gamma=True,
-                    **override_default_vasp_params)
-            )
+            t.append(WriteVaspRelaxFromStructure(struct_dir='.', force_gamma=True,
+                                                 **override_default_vasp_params))
         else:
-            vasp_input_set = vasp_input_set or MPRelaxSetEx(
-                structure, force_gamma=True,
-                **override_default_vasp_params)
-            t.append(WriteVaspFromIOSet(
-                structure=structure, vasp_input_set=vasp_input_set))
+            vasp_input_set = vasp_input_set or MPRelaxSetEx(structure, force_gamma=True,
+                                                            **override_default_vasp_params)
+            t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
 
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, job_type=job_type, ediffg=ediffg,
                                   auto_npar=">>auto_npar<<"))
