@@ -51,8 +51,7 @@ class RunVaspDirect(FiretaskBase):
         vasp_cmd = env_chk(self["vasp_cmd"], fw_spec)
         logger.info("Running VASP using exe: {}".format(vasp_cmd))
         return_code = subprocess.call(vasp_cmd, shell=True)
-        logger.info(
-            "VASP finished running with returncode: {}".format(return_code))
+        logger.info("VASP finished running with returncode: {}".format(return_code))
 
 
 @explicit_serialize
@@ -178,17 +177,14 @@ class RunVaspCustodian(FiretaskBase):
         scratch_dir = env_chk(self.get("scratch_dir"), fw_spec)
         gzip_output = self.get("gzip_output", True)
         max_errors = self.get("max_errors", 5)
-        auto_npar = env_chk(self.get("auto_npar"), fw_spec,
-                            strict=False, default=False)
-        gamma_vasp_cmd = env_chk(
-            self.get("gamma_vasp_cmd"), fw_spec, strict=False, default=None)
+        auto_npar = env_chk(self.get("auto_npar"), fw_spec, strict=False, default=False)
+        gamma_vasp_cmd = env_chk(self.get("gamma_vasp_cmd"), fw_spec, strict=False, default=None)
         if gamma_vasp_cmd:
             gamma_vasp_cmd = shlex.split(gamma_vasp_cmd)
 
         # construct jobs
         if job_type == "normal":
-            jobs = [VaspJob(vasp_cmd, auto_npar=auto_npar,
-                            gamma_vasp_cmd=gamma_vasp_cmd)]
+            jobs = [VaspJob(vasp_cmd, auto_npar=auto_npar, gamma_vasp_cmd=gamma_vasp_cmd)]
         elif job_type == "double_relaxation_run":
             jobs = VaspJob.double_relaxation_run(vasp_cmd, auto_npar=auto_npar, ediffg=self.get("ediffg"),
                                                  half_kpts_first_relax=False)
@@ -202,8 +198,7 @@ class RunVaspCustodian(FiretaskBase):
         handlers = handler_groups[self.get("handler_group", "default")]
 
         if self.get("max_force_threshold"):
-            handlers.append(MaxForceErrorHandler(
-                max_force_threshold=self["max_force_threshold"]))
+            handlers.append(MaxForceErrorHandler(max_force_threshold=self["max_force_threshold"]))
 
         if self.get("wall_time"):
             handlers.append(WalltimeHandler(wall_time=self["wall_time"]))
@@ -211,8 +206,7 @@ class RunVaspCustodian(FiretaskBase):
         validators = [VasprunXMLValidator(), VaspFilesValidator()]
 
         c = Custodian(handlers, jobs, validators=validators, max_errors=max_errors,
-                      scratch_dir=scratch_dir, gzipped_output=gzip_output,
-                      terminate_func=terminate_func)
+                      scratch_dir=scratch_dir, gzipped_output=gzip_output, terminate_func=terminate_func)
 
         c.run()
 
@@ -243,12 +237,10 @@ class RunBoltztrap(FiretaskBase):
         doping = self.get("doping", None)
         soc = self.get("soc", False)
 
-        vasprun, outcar = get_vasprun_outcar(
-            ".", parse_dos=True, parse_eigen=True)
+        vasprun, outcar = get_vasprun_outcar(".", parse_dos=True, parse_eigen=True)
         bs = vasprun.get_band_structure()
         nelect = outcar.nelect
-        runner = BoltztrapRunner(
-            bs, nelect, scissor=scissor, doping=doping, tmax=tmax, tgrid=tgrid, soc=soc)
+        runner = BoltztrapRunner(bs, nelect, scissor=scissor, doping=doping, tmax=tmax, tgrid=tgrid, soc=soc)
         runner.run(path_dir=os.getcwd())
 
 
@@ -274,8 +266,7 @@ class RunVaspFake(FiretaskBase):
 
     def _verify_inputs(self):
         user_incar = Incar.from_file(os.path.join(os.getcwd(), "INCAR"))
-        ref_incar = Incar.from_file(os.path.join(
-            self["ref_dir"], "inputs", "INCAR"))
+        ref_incar = Incar.from_file(os.path.join(self["ref_dir"], "inputs", "INCAR"))
 
         # perform some BASIC tests
 
@@ -296,16 +287,14 @@ class RunVaspFake(FiretaskBase):
 
         # check POSCAR
         user_poscar = Poscar.from_file(os.path.join(os.getcwd(), "POSCAR"))
-        ref_poscar = Poscar.from_file(os.path.join(
-            self["ref_dir"], "inputs", "POSCAR"))
+        ref_poscar = Poscar.from_file(os.path.join(self["ref_dir"], "inputs", "POSCAR"))
         if user_poscar.natoms != ref_poscar.natoms or user_poscar.site_symbols != ref_poscar.site_symbols:
             raise ValueError("POSCAR files are inconsistent! Paths are:\n{}\n{}".format(
                 os.getcwd(), os.path.join(self["ref_dir"], "inputs")))
 
         # check POTCAR
         user_potcar = Potcar.from_file(os.path.join(os.getcwd(), "POTCAR"))
-        ref_potcar = Potcar.from_file(os.path.join(
-            self["ref_dir"], "inputs", "POTCAR"))
+        ref_potcar = Potcar.from_file(os.path.join(self["ref_dir"], "inputs", "POTCAR"))
         if user_potcar.symbols != ref_potcar.symbols:
             raise ValueError("POTCAR files are inconsistent! Paths are:\n{}\n{}".format(
                 os.getcwd(), os.path.join(self["ref_dir"], "inputs")))
