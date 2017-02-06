@@ -279,8 +279,7 @@ class RunVaspFake(FiretaskBase):
 
         # check KPOINTS
         user_kpoints = Kpoints.from_file(os.path.join(os.getcwd(), "KPOINTS"))
-        ref_kpoints = Kpoints.from_file(
-            os.path.join(self["ref_dir"], "inputs", "KPOINTS"))
+        ref_kpoints = Kpoints.from_file(os.path.join(self["ref_dir"], "inputs", "KPOINTS"))
         if user_kpoints.style != ref_kpoints.style or user_kpoints.num_kpts != ref_kpoints.num_kpts:
             raise ValueError("KPOINT files are inconsistent! Paths are:\n{}\n{}".format(
                 os.getcwd(), os.path.join(self["ref_dir"], "inputs")))
