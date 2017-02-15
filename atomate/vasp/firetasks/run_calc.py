@@ -21,7 +21,7 @@ from pymatgen.electronic_structure.boltztrap import BoltztrapRunner
 from custodian import Custodian
 from custodian.vasp.handlers import VaspErrorHandler, AliasingErrorHandler, MeshSymmetryErrorHandler, \
     UnconvergedErrorHandler, MaxForceErrorHandler, PotimErrorHandler, FrozenJobErrorHandler, \
-    NonConvergingErrorHandler, PositiveEnergyErrorHandler, WalltimeHandler
+    NonConvergingErrorHandler, PositiveEnergyErrorHandler, WalltimeHandler, StdErrHandler
 from custodian.vasp.jobs import VaspJob
 from custodian.vasp.validators import VasprunXMLValidator, VaspFilesValidator
 
@@ -151,7 +151,7 @@ class RunVaspCustodian(FiretaskBase):
         handler_groups = {
             "default": [VaspErrorHandler(), MeshSymmetryErrorHandler(), UnconvergedErrorHandler(),
                         NonConvergingErrorHandler(), PotimErrorHandler(), PositiveEnergyErrorHandler(),
-                        FrozenJobErrorHandler()],
+                        FrozenJobErrorHandler(), StdErrHandler()],
             "strict": [VaspErrorHandler(), MeshSymmetryErrorHandler(), UnconvergedErrorHandler(),
                        NonConvergingErrorHandler(), PotimErrorHandler(), PositiveEnergyErrorHandler(),
                        FrozenJobErrorHandler(), AliasingErrorHandler()],
