@@ -60,7 +60,7 @@ class WriteVaspRelaxFromStructure(FiretaskBase):
 
 class OptimizeStepFW(Firework):
 
-    def __init__(self, structure, step_index, name="Relax",
+    def __init__(self, structure, step_index, name="Rlx",
                  vasp_input_set=None, vasp_cmd="vasp",
                  override_default_vasp_params=None, ediffg=None,
                  job_type="normal", db_file=None, parents=None, **kwargs):
@@ -98,5 +98,5 @@ class OptimizeStepFW(Firework):
                                   auto_npar=">>auto_npar<<"))
         t.append(PassCalcLocs(name=name))
         t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
-        super(OptimizeStepFW, self).__init__(t, parents=parents, name="{}-{}-Step{}".format(
+        super(OptimizeStepFW, self).__init__(t, parents=parents, name="{}-{}-Stp{}".format(
             structure.composition.reduced_formula, name, 1 + step_index), **kwargs)
