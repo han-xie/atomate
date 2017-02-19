@@ -114,19 +114,22 @@ class RunVaspCustodian(FiretaskBase):
 
         handler_groups = {
             "default": [VaspErrorHandler(), MeshSymmetryErrorHandler(), UnconvergedErrorHandler(),
-                        NonConvergingErrorHandler(),PotimErrorHandler(), PositiveEnergyErrorHandler(),
+                        NonConvergingErrorHandler(), PotimErrorHandler(), PositiveEnergyErrorHandler(),
                         FrozenJobErrorHandler(), StdErrHandler()],
             "strict": [VaspErrorHandler(), MeshSymmetryErrorHandler(), UnconvergedErrorHandler(),
-                       NonConvergingErrorHandler(),PotimErrorHandler(), PositiveEnergyErrorHandler(),
+                       NonConvergingErrorHandler(), PotimErrorHandler(), PositiveEnergyErrorHandler(),
                        FrozenJobErrorHandler(), AliasingErrorHandler(), StdErrHandler()],
             "md": [VaspErrorHandler(), NonConvergingErrorHandler()],
             "no_handler": []
-            }
+        }
 
         vasp_cmd = env_chk(self["vasp_cmd"], fw_spec)
         if isinstance(vasp_cmd, six.string_types):
             vasp_cmd = os.path.expandvars(vasp_cmd)
             vasp_cmd = shlex.split(vasp_cmd)
+        if vasp_cmd[0] == "srun":
+            if "-v" not in vasp_cmd:
+                vasp_cmd.insert(1, "-v")
 
         # initialize variables
         job_type = self.get("job_type", "normal")
@@ -137,6 +140,10 @@ class RunVaspCustodian(FiretaskBase):
         gamma_vasp_cmd = env_chk(self.get("gamma_vasp_cmd"), fw_spec, strict=False, default=None)
         if gamma_vasp_cmd:
             gamma_vasp_cmd = shlex.split(gamma_vasp_cmd)
+        if "run" in vasp_cmd[0]:
+            mpi_cmd = vasp_cmd[0]
+        else:
+            mpi_cmd = None
 
         # construct jobs
         if job_type == "normal":
@@ -162,7 +169,7 @@ class RunVaspCustodian(FiretaskBase):
         validators = [VasprunXMLValidator(), VaspFilesValidator()]
 
         c = Custodian(handlers, jobs, validators=validators, max_errors=max_errors,
-                      scratch_dir=scratch_dir, gzipped_output=gzip_output)
+                      scratch_dir=scratch_dir, gzipped_output=gzip_output, mpi_cmd=mpi_cmd)
 
         c.run()
 
