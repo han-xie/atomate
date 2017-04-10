@@ -272,7 +272,7 @@ class TransmuterFW(Firework):
         """
         t = []
 
-        vasp_input_set = vasp_input_set or MPStaticSet(structure, force_gamma=True, **override_default_vasp_params)
+        vasp_input_set = vasp_input_set or MPStaticSet(structure, force_gamma=True)
 
         if parents:
             if copy_vasp_outputs:
@@ -369,41 +369,5 @@ class BoltztrapFW(Firework):
              BoltztrapToDBTask(db_file=db_file, additional_fields=additional_fields),
              PassCalcLocs(name=name)]
         super(BoltztrapFW, self).__init__(t, parents=parents, name="{}-{}".format(
-            structure.composition.reduced_formula, name), **kwargs)
-
-# -------------------Customized: Han 20170327-------------------
-class DispersionFW(Firework):
-    def __init__(self, structure, name="dispersion", vasp_input_set=None, vasp_cmd="vasp",
-                 copy_vasp_outputs=True, db_file=None, parents=None, **kwargs):
-        """
-        Standard phonopy calculation Firework for dispersion curve using DFPT.
-
-        Args:
-            structure (Structure): Input structure.
-            name (str): Name for the Firework.
-            vasp_input_set (VaspInputSet): input set to use (for jobs w/no parents)
-                Defaults to MPRelaxSet() if None.
-            vasp_cmd (str): Command to run vasp.
-            copy_vasp_outputs (bool): Whether to copy outputs from previous run. Defaults to True.
-            db_file (str): Path to file specifying db credentials.
-            parents (Firework): Parents of this particular Firework. FW or list of FWS.
-            \*\*kwargs: Other kwargs that are passed to Firework.__init__.
-        """
-        t = []
-
-        from atomate.vasp.firetasks.run_calc import RunPhonopy # try?
-
-        if parents:
-            if copy_vasp_outputs:
-                t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
-            t.append(WriteVaspStaticFromPrev(prev_calc_dir='.'))
-        else:
-            vasp_input_set = vasp_input_set or MPRelaxSet(structure)
-            t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
-        
-        t.append(RunPhonopy(vasp_cmd=vasp_cmd))
-#        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd))
-        t.append(PassCalcLocs(name=name))
-        super(PhonopyFW, self).__init__(t, parents=parents, name="{}-{}".format(
             structure.composition.reduced_formula, name), **kwargs)
 
