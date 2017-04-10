@@ -1,0 +1,6 @@
+# A typical dispersion calculation using phonopy
+fireworks:
+- fw: atomate.vasp.fireworks.core.OptimizeFW
+- fw: atomate.vasp.fireworks.core.TransmuterFW
+  params:
+    parents: 0

@@ -346,3 +346,29 @@ def wf_thermal_expansion(structure, c=None):
         wf = add_wf_metadata(wf, structure)
 
     return wf
+
+# -------------------Customized: Han 20170327-------------------
+def wf_dispersion(structure, c=None):
+    c = c or {}
+    vasp_cmd = c.get("VASP_CMD", VASP_CMD)
+    db_file = c.get("DB_FILE",DB_FILE)
+
+    wf = get_wf(structure, "dispersion.yaml",
+                vis=MPRelaxSet(structure, force_gamma=True),
+                common_params={"vasp_cmd": vasp_cmd,
+                               "db_file": db_file})
+#    wf = get_wf(structure, "dispersion.yaml",
+#                vis=MPRelaxSet(structure, force_gamma=True, user_incar_settings = {"IBRION": 6}),
+#                common_params={"vasp_cmd": vasp_cmd,
+#                               "db_file": db_file})
+
+    wf = add_common_powerups(wf, c)
+    
+    if c.get("STABILITY_CHECK", STABILITY_CHECK):
+        wf = add_stability_check(wf, fw_name_constraint="structure optimization")
+        
+    if c.get("ADD_WF_METADATA", ADD_WF_METADATA):
+        wf = add_wf_metadata(wf, structure)
+
+    return wf
+
