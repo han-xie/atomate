@@ -313,3 +313,4 @@ class RunVaspFake(FiretaskBase):
                 shutil.copy(full_file_name, os.getcwd())
         logger.info("RunVaspFake: ran fake VASP, generated outputs")
 
+# -------------------Customized: Han 20170410-------------------
