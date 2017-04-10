@@ -8,5 +8,5 @@ fireworks:
     - SupercellTransformation
     transformation_params:
     - "scaling_matrix": [[5, 0, 0], [0, 5, 0], [0, 0, 5]]
-    override_default_vasp_params:   {"IBRION": 5}
+    override_default_vasp_params:   {"user_incar_settings": {"IBRION": 5}}
 #- fw: atomate.vasp.fireworks.user.RunPhonopy

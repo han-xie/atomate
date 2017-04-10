@@ -272,7 +272,7 @@ class TransmuterFW(Firework):
         """
         t = []
 
-        vasp_input_set = vasp_input_set or MPStaticSet(structure, force_gamma=True)
+        vasp_input_set = vasp_input_set or MPStaticSet(structure, force_gamma=True, **override_default_vasp_params)
 
         if parents:
             if copy_vasp_outputs:
