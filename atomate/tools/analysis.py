@@ -131,3 +131,32 @@ def get_phonopy_thermal_expansion(energies, volumes, force_constants, structure,
     alpha = phonopy_qha.get_thermal_expansion()[:max_t_index]
     T = phonopy_qha._qha._temperatures[:max_t_index]
     return alpha, T
+
+# -------------------Customized: Han 20170417-------------------
+def get_phonopy_dispersion(force_constants, structure, supercell, bands):
+    """
+    Calculate phonon dispersion and output to band.yaml.
+
+    Args:
+        force_constants (list):
+        structure (Structure):
+        bands (list): 
+
+    Returns:
+        Write output to band.yaml.
+    """
+    try:
+        from phonopy import Phonopy
+        from phonopy.structure.atoms import Atoms as PhonopyAtoms
+    except ImportError:
+        import sys
+        print("Please install the required phonopy package. Exiting.")
+        sys.exit()
+
+    phon_atoms = PhonopyAtoms(symbols=[str(s.specie) for s in structure],
+                              scaled_positions=structure.frac_coords,
+                              cell=structure.lattice.matrix)
+    phonon = Phonopy(phon_atoms, supercell)
+    phonon.set_force_constants(force_constants)
+    phonon.set_band_structure(bands)
+    phonon.write_yaml_band_structure()
