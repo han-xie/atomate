@@ -383,7 +383,7 @@ class WriteVaspDispersionIOSet(FiretaskBase):
                                                 'ISPIN': 1, 'LREAL': 'False', 'NSW': 1, 'LCHARG': 'False',
                                                 'ISTART': 0, 'INIWAV': 1, 'ISYM': 1,
                                                 'POTIM': 0.015, 'NFREE': 2, 'IALGO': 48}})
-        vis_dict.update({'user_kpoints_settings':{'reciprocal_density': 10}}) # To change!
+        vis_dict.update({'user_kpoints_settings':{'reciprocal_density': 1}}) # To change!
         vis_new = vasp_input_set.__class__.from_dict(vis_dict) 
         rm_parameters=['ALGO', 'ISIF', 'LORBIT', 'MAGMOM']
         for rmi in rm_parameters:
