@@ -1,12 +1,7 @@
-# demonstration/example of how to use the TransmuterFW
+# demonstration/example of how to use the DispersionFW
 fireworks:
 - fw: atomate.vasp.fireworks.core.OptimizeFW
-- fw: atomate.vasp.fireworks.core.TransmuterFW
+- fw: atomate.vasp.fireworks.core.DispersionFW
   params:
     parents: 0
-    transformations:
-    - SupercellTransformation
-    transformation_params:
-    - "scaling_matrix": [[5, 0, 0], [0, 5, 0], [0, 0, 5]]
-    override_default_vasp_params:   {"user_incar_settings": {"IBRION": 5}}
 #- fw: atomate.vasp.fireworks.user.RunPhonopy

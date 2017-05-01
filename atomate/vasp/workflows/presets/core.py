@@ -371,4 +371,3 @@ def wf_dispersion(structure, c=None):
         wf = add_wf_metadata(wf, structure)
 
     return wf
-

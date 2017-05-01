@@ -371,3 +371,45 @@ class BoltztrapFW(Firework):
         super(BoltztrapFW, self).__init__(t, parents=parents, name="{}-{}".format(
             structure.composition.reduced_formula, name), **kwargs)
 
+# -------------------Customized: Han 20170501-------------------
+class DispersionFW(Firework):
+    def __init__(self, structure, name="dispersion", vasp_input_set=None, vasp_cmd="vasp",
+                 copy_vasp_outputs=True, db_file=None, parents=None, **kwargs):
+        """
+        Standard dispersion Firework.
+
+        Args:
+            structure (Structure): Input structure.
+            name (str): Name for the Firework.
+            vasp_input_set (VaspInputSet): input set to use.
+                Defaults to MPRelaxSet() if None.
+            vasp_cmd (str): Command to run vasp.
+            copy_vasp_outputs (bool): yes or no.
+            db_file (str): Path to file specifying db credentials.
+            parents (Firework): Parents of this particular Firework.
+                FW or list of FWS.
+            \*\*kwargs: Other kwargs that are passed to Firework.__init__.
+        """
+        t = []
+
+        vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
+        supercell = [[5, 0, 0], [0, 5, 0], [0, 0, 5]]
+        # WriteVaspDispersionIOSet (write_inputs.py)
+        from atomate.vasp.firetasks.run_calc import PhonopyDispersion
+
+        if parents:
+            if copy_vasp_outputs:
+                t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
+            t.append(WriteVaspDispersionIOSet(structure=structure, vasp_input_set=vasp_input_set,
+                                              supercell=supercell))
+        else:
+            t.append(vasp_input_set.write_input("."))
+            t.append(WriteVaspDispersionIOSet(structure=structure, vasp_input_set=vasp_input_set,
+                                              supercell=supercell))
+
+        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd))
+        t.append(PassCalcLocs(name=name))
+#        t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
+        t.append(PhonopyDispersion(supercell=supercell))
+        super(DispersionFW, self).__init__(t, parents=parents, name="{}-{}".
+                                           format(structure.composition.reduced_formula, name), **kwargs)
