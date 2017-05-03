@@ -361,14 +361,14 @@ class WriteNormalmodeDisplacedPoscar(FiretaskBase):
 @explicit_serialize
 class WriteVaspDispersionIOSet(FiretaskBase):
     required_params = ["structure", "vasp_input_set", "supercell"]
-    try:
-        from phonopy import Phonopy
-        from phonopy.interface import read_crystal_structure
-        import phonopy.file_IO as file_IO
-        from phonopy.interface.vasp import write_supercells_with_displacements
-    except ImportError:
-        logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
     def run_task(self, fw_spec):
+        try:
+            from phonopy import Phonopy
+            from phonopy.interface import read_crystal_structure
+            import phonopy.file_IO as file_IO
+            from phonopy.interface.vasp import write_supercells_with_displacements
+        except ImportError:
+            logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
 #        vasp_input_set.write_input(".")
         os.system("mv POSCAR POSCAR_unitcell")
         unitcell, opt_info = read_crystal_structure(filename="POSCAR_unitcell")
