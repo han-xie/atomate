@@ -330,6 +330,7 @@ class PhonopyDispersion(FiretaskBase):
         except ImportError:
             logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
 #        vasp_input_set.write_input(".")
+        supercell = self["supercell"]
         vasprun = Vasprun(io.open("vasprun.xml","rb"))
         force_constants, atom_types = vasprun.read_force_constants()
         write_FORCE_CONSTANTS(force_constants)

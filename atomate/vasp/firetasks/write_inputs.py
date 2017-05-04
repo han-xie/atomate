@@ -370,6 +370,8 @@ class WriteVaspDispersionIOSet(FiretaskBase):
         except ImportError:
             logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
 #        vasp_input_set.write_input(".")
+        supercell = self["supercell"]
+        vasp_input_set = self["vasp_input_set"]
         os.system("mv POSCAR POSCAR_unitcell")
         unitcell, opt_info = read_crystal_structure(filename="POSCAR_unitcell")
         phonon = Phonopy(unitcell, supercell)
