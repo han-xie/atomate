@@ -392,4 +392,4 @@ class WriteVaspDispersionIOSet(FiretaskBase):
             vis_new.config_dict['INCAR'].pop(rmi)
         vis_new.write_input(".")
         write_supercells_with_displacements(phonon.get_supercell(), cells_with_disps)
-        os.system("mv SPOCAR POSCAR")
+        os.system("mv SPOSCAR POSCAR")
