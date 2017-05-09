@@ -393,7 +393,7 @@ class DispersionFW(Firework):
         t = []
 
         vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
-        supercell = [[5, 0, 0], [0, 5, 0], [0, 0, 5]]
+        supercell = [[3, 0, 0], [0, 3, 0], [0, 0, 3]]
         # WriteVaspDispersionIOSet (write_inputs.py)
         from atomate.vasp.firetasks.run_calc import PhonopyDispersion
 
@@ -407,7 +407,7 @@ class DispersionFW(Firework):
             t.append(WriteVaspDispersionIOSet(structure=structure, vasp_input_set=vasp_input_set,
                                               supercell=supercell))
 
-        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd))
+        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
         t.append(PassCalcLocs(name=name))
 #        t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
         t.append(PhonopyDispersion(supercell=supercell))
