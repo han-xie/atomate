@@ -320,6 +320,8 @@ class PhonopyDispersion(FiretaskBase):
     def run_task(self, fw_spec):
         import io
         import numpy as np
+        from pymatgen.core.structure import Structure
+        from pymatgen.symmetry.bandstructure import HighSymmKpath
         try:
             from phonopy import Phonopy
             from phonopy.interface import read_crystal_structure
@@ -328,18 +330,14 @@ class PhonopyDispersion(FiretaskBase):
             from phonopy.interface.vasp import write_supercells_with_displacements
             from phonopy.interface.vasp import Vasprun
         except ImportError:
-            logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
+            logger.warn("Error in loading the required 'phonopy' package.")
 #        vasp_input_set.write_input(".")
         supercell = self["supercell"]
         vasprun = Vasprun(io.open("vasprun.xml","rb"))
         force_constants, atom_types = vasprun.read_force_constants()
         write_FORCE_CONSTANTS(force_constants)
+        band = HighSymmKpath(Structure.from_file("POSCAR_unitcell")).get_kpoints(coords_are_cartesian=False)[0]
         bands = []
-        band = []
-        q_start  = np.array([0.0, 0.0, 0.0])
-        q_end    = np.array([0.5, 0.5, 0.5])
-        for count in range(51):
-            band.append(q_start + (q_end - q_start) / 50 * count)
         bands.append(band)
         unitcell, opt_info = read_crystal_structure(filename="POSCAR_unitcell")
         phonon = Phonopy(unitcell, supercell)
