@@ -400,11 +400,11 @@ class DispersionFW(Firework):
         if parents:
             if copy_vasp_outputs:
                 t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
-            t.append(WriteVaspDispersionIOSet(structure=structure, vasp_input_set=vasp_input_set,
+            t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set,
                                               supercell=supercell))
         else:
-            t.append(vasp_input_set.write_input("."))
-            t.append(WriteVaspDispersionIOSet(structure=structure, vasp_input_set=vasp_input_set,
+#            t.append(vasp_input_set.write_input(".")) # change WriteVaspDispersionIOSet TODO: must
+            t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set,
                                               supercell=supercell))
 
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
@@ -413,3 +413,22 @@ class DispersionFW(Firework):
         t.append(PhonopyDispersion(supercell=supercell))
         super(DispersionFW, self).__init__(t, parents=parents, name="{}-{}".
                                            format(structure.composition.reduced_formula, name), **kwargs)
+
+class DispForceFW(Firework):
+    def __init__(self, structure, name="disp_force", vasp_input_set=None, vasp_cmd="vasp",
+                 db_file=None, parents=None, supercell=[[3, 0, 0], [0, 3, 0], [0, 0, 3]], **kwargs):
+        t = []
+
+        vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
+        name = "{}-{}".format(structure.composition.reduced_formula, name)
+
+        t.append(PassCalcLocs(name=name+": root"))
+        if parents:
+            t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
+            t.append(WriteDispForceIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
+                                         vasp_cmd=vasp_cmd, prev_calc=True, name=name))
+        else:
+            t.append(WriteDispForceIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
+                                         vasp_cmd=vasp_cmd, prev_calc=False, name=name))
+
+        super(DispForceFW, self).__init__(t, parents=parents, name=name+": root", **kwargs)

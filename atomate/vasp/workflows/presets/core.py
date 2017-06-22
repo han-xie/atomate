@@ -11,6 +11,7 @@ from atomate.vasp.config import SMALLGAP_KPOINT_MULTIPLY, STABILITY_CHECK, VASP_
 from atomate.vasp.powerups import add_small_gap_multiply, add_stability_check, add_modify_incar, \
     add_wf_metadata, add_common_powerups
 from atomate.vasp.workflows.base.core import get_wf
+from atomate.vasp.workflows.base.disp_force import get_wf_disp_force    # Customized: Han
 from atomate.vasp.workflows.base.elastic import get_wf_elastic_constant
 from atomate.vasp.workflows.base.raman import get_wf_raman_spectra
 from atomate.vasp.workflows.base.gibbs import get_wf_gibbs_free_energy
@@ -366,6 +367,28 @@ def wf_dispersion(structure, c=None):
 
     if c.get("STABILITY_CHECK", STABILITY_CHECK):
         wf = add_stability_check(wf, fw_name_constraint="structure optimization")
+
+    if c.get("ADD_WF_METADATA", ADD_WF_METADATA):
+        wf = add_wf_metadata(wf, structure)
+
+    return wf
+
+def wf_disp_force(structure, c=None):
+    c = c or {}
+    vasp_cmd = c.get("VASP_CMD", VASP_CMD)
+    db_file = c.get("DB_FILE", DB_FILE)
+    supercell = c.get("supercell", [[3, 0, 0], [0, 3, 0], [0, 0, 3]])
+
+
+    wf = get_wf_disp_force(structure, vasp_input_set=
+                           MPRelaxSet(structure, force_gamma=True),
+                           vasp_cmd=vasp_cmd, optimize_structure=False,#Test
+                           db_file=db_file, supercell=supercell)
+
+    wf = add_common_powerups(wf, c)
+
+#    if c.get("STABILITY_CHECK", STABILITY_CHECK): # uncessary?
+#        wf = add_stability_check(wf, fw_name_constraint="structure optimization")
 
     if c.get("ADD_WF_METADATA", ADD_WF_METADATA):
         wf = add_wf_metadata(wf, structure)

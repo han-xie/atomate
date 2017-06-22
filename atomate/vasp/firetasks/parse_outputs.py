@@ -550,3 +550,55 @@ class ThermalExpansionCoeffTask(FiretaskBase):
             f.write(json.dumps(summary_dict, default=DATETIME_HANDLER))
 
         logger.info("THERMAL EXPANSION COEFF CALCULATION COMPLETE")
+
+# -------------------Customized: Han 20170622-------------------
+@explicit_serialize
+class DispForceAnalysisTask(FiretaskBase):
+    """
+    Analyze dispersion
+    """
+
+    required_params = ["db_file", "supercell"]
+
+    def run_task(self, fw_spec):
+        from pymatgen.symmetry.bandstructure import HighSymmKpath
+        try:
+            from phonopy import Phonopy
+            from phonopy.interface import read_crystal_structure, create_FORCE_SETS
+            import phonopy.file_IO as file_IO
+            from phonopy.structure.cells import determinant
+        except ImportError:
+            logger.warn("Error in loading the required phonopy package.")
+
+        calc_locs_array = fw_spec["calc_locs"]
+        db_file = env_chk(self.get("db_file"), fw_spec)
+        supercell = self["supercell"]
+
+        paths={}
+        for calc_loc in calc_locs_array:
+            paths[calc_loc['name']] = calc_loc['path']
+        root_path = paths.pop(sorted(paths)[-1])
+        unitcell, opt_info = read_crystal_structure(os.path.join(root_path,'POSCAR_unitcell'))
+        phonon = Phonopy(unitcell, supercell)
+        natom_unit = unitcell.get_number_of_atoms()
+        natom_super = determinant(supercell)*natom_unit
+        os.system("cp "+os.path.join(root_path,'disp.yaml')+" .")
+
+        force_paths = []
+        for iname in sorted(paths):
+            force_paths.append(os.path.join(paths[iname],'vasprun.xml'))
+#        print(force_paths)
+        create_FORCE_SETS("vasp",force_paths)
+        force_sets = file_IO.parse_FORCE_SETS()
+        if force_sets['natom'] != natom_super:
+            logger.warn("Error: inconsistent supercell in FORCE_SETS.")
+        phonon.set_displacement_dataset(force_sets)
+        phonon.produce_force_constants()
+        file_IO.write_FORCE_CONSTANTS(phonon.get_force_constants())
+        band = HighSymmKpath(Structure.from_file(os.path.join(root_path,'POSCAR_unitcell'))).get_kpoints(
+                                                                              coords_are_cartesian=False)[0]
+        bands = []
+        bands.append(band)
+        phonon.set_band_structure(bands)
+        phonon.write_yaml_band_structure()
+        logger.info("Calculate dispersion from FORCE_SETS COMPLETE")
