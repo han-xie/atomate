@@ -382,7 +382,7 @@ def wf_disp_force(structure, c=None):
 
     wf = get_wf_disp_force(structure, vasp_input_set=
                            MPRelaxSet(structure, force_gamma=True),
-                           vasp_cmd=vasp_cmd, optimize_structure=False,#Test
+                           vasp_cmd=vasp_cmd, optimize_structure=True,
                            db_file=db_file, supercell=supercell)
 
     wf = add_common_powerups(wf, c)

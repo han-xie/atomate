@@ -572,11 +572,12 @@ class DispForceAnalysisTask(FiretaskBase):
 
         calc_locs_array = fw_spec["calc_locs"]
         db_file = env_chk(self.get("db_file"), fw_spec)
-        supercell = self["supercell"]
+        supercell = self.get("supercell")
 
         paths={}
         for calc_loc in calc_locs_array:
-            paths[calc_loc['name']] = calc_loc['path']
+            if "disp_force" in calc_loc['name']:
+                paths[calc_loc['name']] = calc_loc['path']
         root_path = paths.pop(sorted(paths)[-1])
         unitcell, opt_info = read_crystal_structure(os.path.join(root_path,'POSCAR_unitcell'))
         phonon = Phonopy(unitcell, supercell)

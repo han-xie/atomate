@@ -422,12 +422,13 @@ class DispForceFW(Firework):
         vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
         name = "{}-{}".format(structure.composition.reduced_formula, name)
 
-        t.append(PassCalcLocs(name=name+": root"))
         if parents:
             t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
+            t.append(PassCalcLocs(name=name+": root"))
             t.append(WriteDispForceIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
                                          vasp_cmd=vasp_cmd, prev_calc=True, name=name))
         else:
+            t.append(PassCalcLocs(name=name+": root"))
             t.append(WriteDispForceIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
                                          vasp_cmd=vasp_cmd, prev_calc=False, name=name))
 
