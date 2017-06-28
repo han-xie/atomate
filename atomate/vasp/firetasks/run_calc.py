@@ -312,7 +312,7 @@ class RunVaspFake(FiretaskBase):
             if os.path.isfile(full_file_name):
                 shutil.copy(full_file_name, os.getcwd())
         logger.info("RunVaspFake: ran fake VASP, generated outputs")
-
+"""
 # -------------------Customized: Han 20170501-------------------
 @explicit_serialize
 class PhonopyDispersion(FiretaskBase):
@@ -344,3 +344,4 @@ class PhonopyDispersion(FiretaskBase):
         phonon.set_force_constants(force_constants) 
         phonon.set_band_structure(bands)
         phonon.write_yaml_band_structure()
+"""

@@ -11,7 +11,7 @@ from atomate.vasp.config import SMALLGAP_KPOINT_MULTIPLY, STABILITY_CHECK, VASP_
 from atomate.vasp.powerups import add_small_gap_multiply, add_stability_check, add_modify_incar, \
     add_wf_metadata, add_common_powerups
 from atomate.vasp.workflows.base.core import get_wf
-from atomate.vasp.workflows.base.disp_force import get_wf_disp_force    # Customized: Han
+from atomate.vasp.workflows.base.dispersion import get_wf_dispersion    # Customized: Han
 from atomate.vasp.workflows.base.elastic import get_wf_elastic_constant
 from atomate.vasp.workflows.base.raman import get_wf_raman_spectra
 from atomate.vasp.workflows.base.gibbs import get_wf_gibbs_free_energy
@@ -348,8 +348,9 @@ def wf_thermal_expansion(structure, c=None):
 
     return wf
 
-# -------------------Customized: Han 20170327-------------------
-def wf_dispersion(structure, c=None):
+# -------------------Customized: Han 20170626-------------------
+"""
+#def wf_dispersion(structure, c=None):
     c = c or {}
     vasp_cmd = c.get("VASP_CMD", VASP_CMD)
     db_file = c.get("DB_FILE",DB_FILE)
@@ -372,18 +373,19 @@ def wf_dispersion(structure, c=None):
         wf = add_wf_metadata(wf, structure)
 
     return wf
-
-def wf_disp_force(structure, c=None):
+"""
+def wf_dispersion(structure, c=None):
     c = c or {}
-    vasp_cmd = c.get("VASP_CMD", VASP_CMD)
-    db_file = c.get("DB_FILE", DB_FILE)
+    vasp_cmd = c.get("vasp_cmd", VASP_CMD)
+    db_file = c.get("db_file", DB_FILE)
+    mode = c.get("mode", "force") # This can be either "force" or "hessian"
     supercell = c.get("supercell", [[3, 0, 0], [0, 3, 0], [0, 0, 3]])
+    user_kpoints_settings = c.get("user_kpoints_settings", {"grid_density": 7000})
+    optimize_structure = c.get("optimize_structure", True)
 
-
-    wf = get_wf_disp_force(structure, vasp_input_set=
-                           MPRelaxSet(structure, force_gamma=True),
-                           vasp_cmd=vasp_cmd, optimize_structure=True,
-                           db_file=db_file, supercell=supercell)
+    wf = get_wf_dispersion(structure, vasp_cmd=vasp_cmd, db_file=db_file, mode=mode,
+                           supercell=supercell, user_kpoints_settings=user_kpoints_settings,
+                           optimize_structure=optimize_structure)
 
     wf = add_common_powerups(wf, c)
 

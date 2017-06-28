@@ -371,10 +371,11 @@ class BoltztrapFW(Firework):
         super(BoltztrapFW, self).__init__(t, parents=parents, name="{}-{}".format(
             structure.composition.reduced_formula, name), **kwargs)
 
-# -------------------Customized: Han 20170501-------------------
+# -------------------Customized: Han 20170627-------------------
 class DispersionFW(Firework):
-    def __init__(self, structure, name="dispersion", vasp_input_set=None, vasp_cmd="vasp",
-                 copy_vasp_outputs=True, db_file=None, parents=None, **kwargs):
+    def __init__(self, structure, name="dispersion", vasp_input_set=None,
+                 vasp_cmd="vasp", db_file=None, mode="force", parents=None,
+                 supercell=[[3, 0, 0], [0, 3, 0], [0, 0, 3]], **kwargs):
         """
         Standard dispersion Firework.
 
@@ -382,38 +383,47 @@ class DispersionFW(Firework):
             structure (Structure): Input structure.
             name (str): Name for the Firework.
             vasp_input_set (VaspInputSet): input set to use.
-                Defaults to MPRelaxSet() if None.
+                Must be specified.
             vasp_cmd (str): Command to run vasp.
-            copy_vasp_outputs (bool): yes or no.
             db_file (str): Path to file specifying db credentials.
+            mode (str): options:
+                "force": calculate dispersion from forces.
+                "hessian": calculate dispersion from hessian.
             parents (Firework): Parents of this particular Firework.
                 FW or list of FWS.
+            supercell (tuple): supercell size to use.
             \*\*kwargs: Other kwargs that are passed to Firework.__init__.
         """
         t = []
 
-        vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
-        supercell = [[3, 0, 0], [0, 3, 0], [0, 0, 3]]
-        # WriteVaspDispersionIOSet (write_inputs.py)
-        from atomate.vasp.firetasks.run_calc import PhonopyDispersion
-
-        if parents:
-            if copy_vasp_outputs:
+        if mode == "force":
+            name = "{}-{}_force".format(structure.composition.reduced_formula, name)
+            if parents:
                 t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
-            t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set,
-                                              supercell=supercell))
-        else:
-#            t.append(vasp_input_set.write_input(".")) # change WriteVaspDispersionIOSet TODO: must
-            t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set,
-                                              supercell=supercell))
-
-        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
-        t.append(PassCalcLocs(name=name))
-#        t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
-        t.append(PhonopyDispersion(supercell=supercell))
-        super(DispersionFW, self).__init__(t, parents=parents, name="{}-{}".
-                                           format(structure.composition.reduced_formula, name), **kwargs)
-
+                t.append(PassCalcLocs(name="{}: root".format(name)))
+                t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set, mode=mode, supercell=supercell,
+                                                  prev_calc=True, vasp_cmd=vasp_cmd, name=name))
+            else:
+                t.append(PassCalcLocs(name="{}: root".format(name)))
+                t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set, mode=mode, supercell=supercell,
+                                                  prev_calc=False, vasp_cmd=vasp_cmd, name=name))
+            name = "{}: root".format(name)
+        elif mode == "hessian":
+            from atomate.vasp.firetasks.parse_outputs import DispersionAnalysisTask
+            name = "{}-{}_hessian".format(structure.composition.reduced_formula, name)
+            if parents:
+                t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
+                t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set, mode=mode, supercell=supercell,
+                                                  prev_calc=True))
+            else:
+                t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set, mode=mode, supercell=supercell,
+                                                  prev_calc=False))
+            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+            t.append(PassCalcLocs(name=name))
+#            t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
+            t.append(DispersionAnalysisTask(db_file=db_file, mode=mode, supercell=supercell))
+        super(DispersionFW, self).__init__(t, parents=parents, name=name, **kwargs)
+"""
 class DispForceFW(Firework):
     def __init__(self, structure, name="disp_force", vasp_input_set=None, vasp_cmd="vasp",
                  db_file=None, parents=None, supercell=[[3, 0, 0], [0, 3, 0], [0, 0, 3]], **kwargs):
@@ -433,3 +443,4 @@ class DispForceFW(Firework):
                                          vasp_cmd=vasp_cmd, prev_calc=False, name=name))
 
         super(DispForceFW, self).__init__(t, parents=parents, name=name+": root", **kwargs)
+"""

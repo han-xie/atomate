@@ -357,18 +357,19 @@ class WriteNormalmodeDisplacedPoscar(FiretaskBase):
         # write the modified structure to poscar
         structure.to(fmt="poscar", filename="POSCAR")
 
-# -------------------Customized: Han 20170501-------------------
-@explicit_serialize
-class WriteVaspDispersionIOSet(FiretaskBase):
-    required_params = ["vasp_input_set", "supercell"]
-    def run_task(self, fw_spec):
-        try:
-            from phonopy import Phonopy
-            from phonopy.interface import read_crystal_structure
-            import phonopy.file_IO as file_IO
-            from phonopy.interface.vasp import write_supercells_with_displacements
-        except ImportError:
-            logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
+# -------------------Customized: Han 20170627-------------------
+"""
+#@explicit_serialize
+#class WriteVaspDispFC2IOSet(FiretaskBase):
+#    required_params = ["vasp_input_set", "supercell"]
+#    def run_task(self, fw_spec):
+#        try:
+#            from phonopy import Phonopy
+#            from phonopy.interface import read_crystal_structure
+#            import phonopy.file_IO as file_IO
+#            from phonopy.interface.vasp import write_supercells_with_displacements
+#        except ImportError:
+#            logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
 #        vasp_input_set.write_input(".")
         supercell = self["supercell"]
         vasp_input_set = self["vasp_input_set"]
@@ -393,64 +394,64 @@ class WriteVaspDispersionIOSet(FiretaskBase):
         vis_new.write_input(".")
         write_supercells_with_displacements(phonon.get_supercell(), cells_with_disps)
         os.system("mv SPOSCAR POSCAR")
-
+"""
 @explicit_serialize
-class WriteDispForceIOSet(FiretaskBase):
-    required_params = ["vasp_input_set", "supercell", "vasp_cmd", "prev_calc", "name"]
+class WriteVaspDispersionIOSet(FiretaskBase):
+    required_params = ["vasp_input_set", "mode", "supercell", "prev_calc"]
+    optional_params = ["vasp_cmd", "name"]
     def run_task(self, fw_spec):
-        import glob
-        from atomate.common.firetasks.glue_tasks import PassCalcLocs
-        from atomate.vasp.firetasks.run_calc import RunVaspCustodian
-        from fireworks import Firework, FWAction, FileTransferTask
+        vasp_input_set = self["vasp_input_set"]
+        mode = self["mode"]
+        supercell = self["supercell"]
+        prev_calc = self["prev_calc"]
         try:
             from phonopy import Phonopy
             from phonopy.interface import read_crystal_structure
             import phonopy.file_IO as file_IO
             from phonopy.interface.vasp import write_supercells_with_displacements
         except ImportError:
-            logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
-        vasp_input_set = self["vasp_input_set"]
-        vasp_cmd = env_chk(self["vasp_cmd"], fw_spec)
-        supercell = self["supercell"]
-        name = self["name"]
-        prev_calc = self["prev_calc"]
+            logger.warn('Error in loading the required "phonopy" package.')
         if not prev_calc:  # Otherwise, POSCAR already exists
             vasp_input_set.write_input(".")
         os.system("mv POSCAR POSCAR_unitcell")
         unitcell, opt_info = read_crystal_structure(filename="POSCAR_unitcell")
         phonon = Phonopy(unitcell, supercell)
-        phonon.generate_displacements() # deltax option can be added
-        cells_with_disps = phonon.get_supercells_with_displacements()
+        phonon.generate_displacements() # TODO: add deltax option?
         file_IO.write_disp_yaml(phonon.get_displacements(),
                                 phonon.get_supercell(),
                                 phonon.get_displacement_directions())
-        vis_dict = vasp_input_set.as_dict()
-        vis_dict.update({'user_incar_settings':{'EDIFF': 1E-08, 'IBRION': 2, 'ISMEAR': 0,
-                                                'ISPIN': 1, 'NSW': 1}})
-        vis_dict.update({'user_kpoints_settings':{'reciprocal_density': 1}}) # To change!
-        vis_new = vasp_input_set.__class__.from_dict(vis_dict) 
-        rm_parameters=['ISIF', 'LORBIT', 'MAGMOM']
-        for rmi in rm_parameters:
-            vis_new.config_dict['INCAR'].pop(rmi)
-        vis_new.write_input(".")
-        os.system("rm POSCAR")
+        cells_with_disps = phonon.get_supercells_with_displacements()
         write_supercells_with_displacements(phonon.get_supercell(), cells_with_disps)
-        files = glob.glob("POSCAR-*")
-        calc_dir = self.get("path", os.getcwd())
-        fws = []
-        for f in files:
-            tasks = []
-            tasks.append(FileTransferTask({'files': [
-                                          {'src': os.path.join(calc_dir,'INCAR'), 'dest': 'INCAR'},
-                                          {'src': os.path.join(calc_dir,f), 'dest': 'POSCAR'},
-                                          {'src': os.path.join(calc_dir,'KPOINTS'), 'dest': 'KPOINTS'},
-                                          {'src': os.path.join(calc_dir,'POTCAR'), 'dest': 'POTCAR'}],
-                                          'mode': 'copy'}))
+        scell = Poscar.from_file("SPOSCAR").structure
+        vis_dict = vasp_input_set.as_dict()
+        vis_dict['structure'] = scell.as_dict()
+        vis_new = vasp_input_set.__class__.from_dict(vis_dict) 
+        vis_new.write_input(".")
+#        os.system("rm POSCAR")
+        if mode == "force":
+            import glob
+            from atomate.common.firetasks.glue_tasks import PassCalcLocs
+            from atomate.vasp.firetasks.run_calc import RunVaspCustodian
+            from fireworks import Firework, FWAction, FileTransferTask
+            print(self["vasp_cmd"]) # Test point
+            vasp_cmd = self["vasp_cmd"]
+            name = self["name"]
+            files = glob.glob("POSCAR-*")
+            calc_dir = self.get("path", os.getcwd())
+            fws = []
+            for f in files:
+                tasks = []
+                tasks.append(FileTransferTask({'files': [
+                                              {'src': os.path.join(calc_dir,'INCAR'), 'dest': 'INCAR'},
+                                              {'src': os.path.join(calc_dir,f), 'dest': 'POSCAR'},
+                                              {'src': os.path.join(calc_dir,'KPOINTS'), 'dest': 'KPOINTS'},
+                                              {'src': os.path.join(calc_dir,'POTCAR'), 'dest': 'POTCAR'}],
+                                              'mode': 'copy'}))
 #            tasks.append(CopyVaspOutputs(calc_dir=calc_dir, additional_files="$ALL", contcar_to_poscar = False))
 #            tasks.append(ScriptTask.from_str("mv "+f+" POSCAR"))
-            tasks.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
-            tasks.append(PassCalcLocs(name=name+": "+f))
+                tasks.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+                tasks.append(PassCalcLocs(name=name+": "+f))
 #            tasks.append(ScriptTask.from_str("rm *.error *.out"))
-            fw = Firework(tasks, name=name+": "+f)
-            fws.append(fw)
-        return FWAction(detours=fws)
+                fw = Firework(tasks, name=name+": "+f)
+                fws.append(fw)
+            return FWAction(detours=fws)
