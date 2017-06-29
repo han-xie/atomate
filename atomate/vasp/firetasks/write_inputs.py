@@ -401,6 +401,8 @@ class WriteVaspDispersionIOSet(FiretaskBase):
     optional_params = ["vasp_cmd", "name"]
     def run_task(self, fw_spec):
         vasp_input_set = self["vasp_input_set"]
+#        print(vasp_input_set.config_dict['INCAR'])
+#        print(vasp_input_set.as_dict())
         mode = self["mode"]
         supercell = self["supercell"]
         prev_calc = self["prev_calc"]
@@ -425,7 +427,11 @@ class WriteVaspDispersionIOSet(FiretaskBase):
         scell = Poscar.from_file("SPOSCAR").structure
         vis_dict = vasp_input_set.as_dict()
         vis_dict['structure'] = scell.as_dict()
-        vis_new = vasp_input_set.__class__.from_dict(vis_dict) 
+        vis_new = vasp_input_set.__class__.from_dict(vis_dict)
+        rm_parameters = ['ISIF', 'LORBIT', 'MAGMOM']
+        for rmi in rm_parameters:
+            if rmi in vis_new.config_dict['INCAR']:
+                vis_new.config_dict['INCAR'].pop(rmi)
         vis_new.write_input(".")
 #        os.system("rm POSCAR")
         if mode == "force":
@@ -433,7 +439,7 @@ class WriteVaspDispersionIOSet(FiretaskBase):
             from atomate.common.firetasks.glue_tasks import PassCalcLocs
             from atomate.vasp.firetasks.run_calc import RunVaspCustodian
             from fireworks import Firework, FWAction, FileTransferTask
-            print(self["vasp_cmd"]) # Test point
+#            print(self["vasp_cmd"]) # Test point
             vasp_cmd = self["vasp_cmd"]
             name = self["name"]
             files = glob.glob("POSCAR-*")
