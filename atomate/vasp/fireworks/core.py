@@ -423,24 +423,3 @@ class DispersionFW(Firework):
 #            t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
             t.append(DispersionAnalysisTask(db_file=db_file, mode=mode, supercell=supercell))
         super(DispersionFW, self).__init__(t, parents=parents, name=name, **kwargs)
-"""
-class DispForceFW(Firework):
-    def __init__(self, structure, name="disp_force", vasp_input_set=None, vasp_cmd="vasp",
-                 db_file=None, parents=None, supercell=[[3, 0, 0], [0, 3, 0], [0, 0, 3]], **kwargs):
-        t = []
-
-        vasp_input_set = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
-        name = "{}-{}".format(structure.composition.reduced_formula, name)
-
-        if parents:
-            t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
-            t.append(PassCalcLocs(name=name+": root"))
-            t.append(WriteDispForceIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
-                                         vasp_cmd=vasp_cmd, prev_calc=True, name=name))
-        else:
-            t.append(PassCalcLocs(name=name+": root"))
-            t.append(WriteDispForceIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
-                                         vasp_cmd=vasp_cmd, prev_calc=False, name=name))
-
-        super(DispForceFW, self).__init__(t, parents=parents, name=name+": root", **kwargs)
-"""

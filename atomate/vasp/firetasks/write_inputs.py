@@ -358,43 +358,6 @@ class WriteNormalmodeDisplacedPoscar(FiretaskBase):
         structure.to(fmt="poscar", filename="POSCAR")
 
 # -------------------Customized: Han 20170627-------------------
-"""
-#@explicit_serialize
-#class WriteVaspDispFC2IOSet(FiretaskBase):
-#    required_params = ["vasp_input_set", "supercell"]
-#    def run_task(self, fw_spec):
-#        try:
-#            from phonopy import Phonopy
-#            from phonopy.interface import read_crystal_structure
-#            import phonopy.file_IO as file_IO
-#            from phonopy.interface.vasp import write_supercells_with_displacements
-#        except ImportError:
-#            logger.warn("Error in loading the required 'phonopy' package (1.11.8).")
-#        vasp_input_set.write_input(".")
-        supercell = self["supercell"]
-        vasp_input_set = self["vasp_input_set"]
-        os.system("mv POSCAR POSCAR_unitcell")
-        unitcell, opt_info = read_crystal_structure(filename="POSCAR_unitcell")
-        phonon = Phonopy(unitcell, supercell)
-        phonon.generate_displacements() # deltax option can be added
-        cells_with_disps = phonon.get_supercells_with_displacements()
-        file_IO.write_disp_yaml(phonon.get_displacements(),
-                                phonon.get_supercell(),
-                                phonon.get_displacement_directions())
-        vis_dict = vasp_input_set.as_dict()
-        vis_dict.update({'user_incar_settings':{'EDIFF': 1E-08, 'IBRION': 6, 'ICHARG': 2, 'ISMEAR': 0,
-                                                'ISPIN': 1, 'LREAL': 'False', 'NSW': 1, 'LCHARG': 'False',
-                                                'ISTART': 0, 'INIWAV': 1, 'ISYM': 1,
-                                                'POTIM': 0.015, 'NFREE': 2, 'IALGO': 48}})
-        vis_dict.update({'user_kpoints_settings':{'reciprocal_density': 1}}) # To change!
-        vis_new = vasp_input_set.__class__.from_dict(vis_dict) 
-        rm_parameters=['ALGO', 'ISIF', 'LORBIT', 'MAGMOM']
-        for rmi in rm_parameters:
-            vis_new.config_dict['INCAR'].pop(rmi)
-        vis_new.write_input(".")
-        write_supercells_with_displacements(phonon.get_supercell(), cells_with_disps)
-        os.system("mv SPOSCAR POSCAR")
-"""
 @explicit_serialize
 class WriteVaspDispersionIOSet(FiretaskBase):
     required_params = ["vasp_input_set", "mode", "supercell", "prev_calc"]

@@ -312,36 +312,3 @@ class RunVaspFake(FiretaskBase):
             if os.path.isfile(full_file_name):
                 shutil.copy(full_file_name, os.getcwd())
         logger.info("RunVaspFake: ran fake VASP, generated outputs")
-"""
-# -------------------Customized: Han 20170501-------------------
-@explicit_serialize
-class PhonopyDispersion(FiretaskBase):
-    required_params = ["supercell"]
-    def run_task(self, fw_spec):
-        import io
-        import numpy as np
-        from pymatgen.core.structure import Structure
-        from pymatgen.symmetry.bandstructure import HighSymmKpath
-        try:
-            from phonopy import Phonopy
-            from phonopy.interface import read_crystal_structure
-            import phonopy.file_IO as file_IO
-            from phonopy.file_IO import write_FORCE_CONSTANTS
-            from phonopy.interface.vasp import write_supercells_with_displacements
-            from phonopy.interface.vasp import Vasprun
-        except ImportError:
-            logger.warn("Error in loading the required 'phonopy' package.")
-#        vasp_input_set.write_input(".")
-        supercell = self["supercell"]
-        vasprun = Vasprun(io.open("vasprun.xml","rb"))
-        force_constants, atom_types = vasprun.read_force_constants()
-        write_FORCE_CONSTANTS(force_constants)
-        band = HighSymmKpath(Structure.from_file("POSCAR_unitcell")).get_kpoints(coords_are_cartesian=False)[0]
-        bands = []
-        bands.append(band)
-        unitcell, opt_info = read_crystal_structure(filename="POSCAR_unitcell")
-        phonon = Phonopy(unitcell, supercell)
-        phonon.set_force_constants(force_constants) 
-        phonon.set_band_structure(bands)
-        phonon.write_yaml_band_structure()
-"""
