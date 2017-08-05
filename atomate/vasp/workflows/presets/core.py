@@ -7,7 +7,7 @@ import numpy as np
 from pymatgen.io.vasp.sets import MPRelaxSet, MPStaticSet
 
 from atomate.vasp.config import SMALLGAP_KPOINT_MULTIPLY, STABILITY_CHECK, VASP_CMD, \
-    DB_FILE, ADD_WF_METADATA
+    DB_FILE, ADD_WF_METADATA, THIRD_CMD
 from atomate.vasp.powerups import add_small_gap_multiply, add_stability_check, add_modify_incar, \
     add_wf_metadata, add_common_powerups
 from atomate.vasp.workflows.base.core import get_wf
@@ -17,6 +17,7 @@ from atomate.vasp.workflows.base.raman import get_wf_raman_spectra
 from atomate.vasp.workflows.base.gibbs import get_wf_gibbs_free_energy
 from atomate.vasp.workflows.base.bulk_modulus import get_wf_bulk_modulus
 from atomate.vasp.workflows.base.thermal_expansion import get_wf_thermal_expansion
+from atomate.vasp.workflows.base.thermal_conductivity import get_wf_thermal_conductivity    # Customized: Han
 
 
 __author__ = 'Anubhav Jain, Kiran Mathew'
@@ -391,6 +392,29 @@ def wf_dispersion(structure, c=None):
 
 #    if c.get("STABILITY_CHECK", STABILITY_CHECK): # uncessary?
 #        wf = add_stability_check(wf, fw_name_constraint="structure optimization")
+
+    if c.get("ADD_WF_METADATA", ADD_WF_METADATA):
+        wf = add_wf_metadata(wf, structure)
+
+    return wf
+
+def wf_thermal_conductivity(structure, c=None):
+    c = c or {}
+    vasp_cmd = c.get("vasp_cmd", VASP_CMD)
+    third_cmd = c.get("third_cmd", THIRD_CMD)
+    db_file = c.get("db_file", DB_FILE)
+    mode = c.get("mode", "force") # This can be either "force" or "hessian"
+    supercell = c.get("supercell", [[4, 0, 0], [0, 4, 0], [0, 0, 4]])
+    cutoff_3rd = c.get("cutoff_3rd", -4)
+    user_kpoints_settings = c.get("user_kpoints_settings", {"grid_density": 1000})
+    optimize_structure = c.get("optimize_structure", True)
+
+    wf = get_wf_thermal_conductivity(structure, vasp_cmd=vasp_cmd, third_cmd=third_cmd,
+                                     db_file=db_file, mode=mode, supercell=supercell,
+                                     user_kpoints_settings=user_kpoints_settings,
+                                     cutoff_3rd=cutoff_3rd, optimize_structure=optimize_structure)
+
+    wf = add_common_powerups(wf, c)
 
     if c.get("ADD_WF_METADATA", ADD_WF_METADATA):
         wf = add_wf_metadata(wf, structure)

@@ -410,7 +410,7 @@ class DispersionFW(Firework):
             name = "{}: root".format(name)
         elif mode == "hessian":
             from atomate.vasp.firetasks.parse_outputs import DispersionAnalysisTask
-            name = "{}-{}_hessian".format(structure.composition.reduced_formula, name)
+            name = "{}-{}".format(structure.composition.reduced_formula, name)
             if parents:
                 t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
                 t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set, mode=mode, supercell=supercell,
@@ -423,3 +423,40 @@ class DispersionFW(Firework):
 #            t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
             t.append(DispersionAnalysisTask(db_file=db_file, mode=mode, supercell=supercell))
         super(DispersionFW, self).__init__(t, parents=parents, name=name, **kwargs)
+
+# -------------------Customized: Han 20170723-------------------
+class ThirdOrderFW(Firework):
+    def __init__(self, structure, name="thirdorder", vasp_input_set=None,
+                 third_cmd=None, vasp_cmd="vasp", db_file=None, parents=None,
+                 supercell=[[3, 0, 0], [0, 3, 0], [0, 0, 3]], cutoff=None, **kwargs):
+        """
+        Standard thirdorder Firework (for generating FORCE_CONSTANTS_3RD).
+
+        Args:
+            structure (Structure): Input structure.
+            name (str): Name for the Firework.
+            vasp_input_set (VaspInputSet): input set to use.
+                Must be specified.
+            third_cmd (str): Command to run thirdorder package.
+            vasp_cmd (str): Command to run vasp.
+            db_file (str): Path to file specifying db credentials.
+            parents (Firework): Parents of this particular Firework.
+                FW or list of FWS.
+            supercell (tuple): supercell size to use.
+            cutoff (+float or -integer): cutoff distance.
+            \*\*kwargs: Other kwargs that are passed to Firework.__init__.
+        """
+        t = []
+
+        name = "{}-{}".format(structure.composition.reduced_formula, name)
+        if parents:
+            t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
+            t.append(PassCalcLocs(name="{}: root".format(name)))
+            t.append(WriteVaspThirdIOSet(vasp_input_set=vasp_input_set, supercell=supercell, cutoff=cutoff,
+                                         prev_calc=True, third_cmd=third_cmd, vasp_cmd=vasp_cmd, name=name))
+        else:
+            t.append(PassCalcLocs(name="{}: root".format(name)))
+            t.append(WriteVaspThirdIOSet(vasp_input_set=vasp_input_set, supercell=supercell, cutoff=cutoff,
+                                         prev_calc=False, third_cmd=third_cmd, vasp_cmd=vasp_cmd, name=name))
+        name = "{}: root".format(name)
+        super(ThirdOrderFW, self).__init__(t, parents=parents, name=name, **kwargs)

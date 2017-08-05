@@ -630,3 +630,51 @@ class DispersionAnalysisTask(FiretaskBase):
             phonon.set_band_structure(bands)
             phonon.write_yaml_band_structure()
             logger.info("Calculate dispersion from FORCE_SETS COMPLETE.")
+
+# -------------------Customized: Han 20170727-------------------
+@explicit_serialize
+class ThermalConductivityTask(FiretaskBase):
+    """
+    Get thermal conductivity:
+    FORCE_CONSTANTS_2ND
+    FORCE_CONSTANTS_3RD
+    """
+
+    required_params = ["tag", "db_file", "third_cmd", "supercell", "cutoff"]
+
+    def run_task(self, fw_spec):
+        tag = self.get("tag")
+        db_file = env_chk(self.get("db_file"), fw_spec)
+        third_cmd = env_chk(self["third_cmd"], fw_spec)
+        supercell = self["supercell"]
+        cutoff = self["cutoff"]
+
+#        elif mode == "force":
+        calc_locs_array = fw_spec["calc_locs"]
+        fc2_tag = "{} dispersion".format(tag)
+        poscar_tag = "{} thirdorder: 3RD.POSCAR".format(tag)
+        root_tag = "{} thirdorder: root".format(tag)
+        paths={}
+        for calc_loc in calc_locs_array:
+            if fc2_tag in calc_loc['name']:
+                fc2_path = calc_loc['path']
+            if poscar_tag in calc_loc['name']:
+                paths[calc_loc['name']] = calc_loc['path']
+            if root_tag in calc_loc['name']:
+                root_path = calc_loc['path']
+#        unitcell, opt_info = read_crystal_structure(os.path.join(root_path,'POSCAR_unitcell'))
+#        phonon = Phonopy(unitcell, supercell)
+#        natom_unit = unitcell.get_number_of_atoms()
+#        natom_super = determinant(supercell)*natom_unit
+#        os.system("cp "+os.path.join(root_path,'disp.yaml')+" .")
+
+        os.system('cp '+fc2_path+'/FORCE_CONSTANTS FORCE_CONSTANTS_2ND')
+        os.system('cp '+root_path+'/POSCAR .')
+        path_fout = open('third_paths','w')
+        for iname in sorted(paths):
+            path_fout.write(os.path.join(paths[iname],'vasprun.xml\n'))
+        path_fout.close()
+        reap_cmd = third_cmd+' reap '+str(supercell[0][0])+' '+\
+                   str(supercell[1][1])+' '+str(supercell[2][2])+' '+str(cutoff)+'<third_paths'
+        os.system(reap_cmd)
+        logger.info("Calculate thermal conductivity COMPLETE.")

@@ -403,7 +403,7 @@ class WriteVaspDispersionIOSet(FiretaskBase):
             from atomate.vasp.firetasks.run_calc import RunVaspCustodian
             from fireworks import Firework, FWAction, FileTransferTask
 #            print(self["vasp_cmd"]) # Test point
-            vasp_cmd = self["vasp_cmd"]
+            vasp_cmd = env_chk(self["vasp_cmd"], fw_spec)
             name = self["name"]
             files = glob.glob("POSCAR-*")
             calc_dir = self.get("path", os.getcwd())
@@ -424,3 +424,72 @@ class WriteVaspDispersionIOSet(FiretaskBase):
                 fw = Firework(tasks, name=name+": "+f)
                 fws.append(fw)
             return FWAction(detours=fws)
+
+# -------------------Customized: Han 20170723-------------------
+@explicit_serialize
+class WriteVaspThirdIOSet(FiretaskBase):
+    required_params = ["vasp_input_set", "supercell", "prev_calc", "third_cmd", "cutoff"]
+    optional_params = ["vasp_cmd", "name"]
+    def run_task(self, fw_spec):
+        vasp_input_set = self["vasp_input_set"]
+        supercell = self["supercell"]
+        prev_calc = self["prev_calc"]
+        vasp_cmd = env_chk(self["vasp_cmd"], fw_spec)
+        third_cmd = env_chk(self["third_cmd"], fw_spec)
+        cutoff = self["cutoff"]
+        if not prev_calc:  # Otherwise, POSCAR already exists
+            vasp_input_set.write_input(".")
+        # ---Change POSCAR format---
+        os.system("mv POSCAR POSCAR_orig")
+        pos_in = open('POSCAR_orig', 'r')
+        pos_out = open('POSCAR', 'w')
+        for i_line in range(6):
+            pos_out.write(pos_in.readline())
+        str_natom = pos_in.readline()
+        try:
+            natom = int(str_natom)
+        except ValueError:
+            logger.warn('Vasp5.* format POSCAR should be used.')
+        pos_out.write(str_natom)
+        pos_out.write(pos_in.readline())
+        for i_line in range(natom):
+            str_pos = pos_in.readline()
+            tup_pos = str_pos.split()
+            pos_line = "{} {} {}\n".format(tup_pos[0], tup_pos[1], tup_pos[2])
+            pos_out.write(pos_line)
+        pos_in.close()
+        pos_out.close()
+        sow_cmd = third_cmd+' sow '+str(supercell[0][0])+' '+\
+                  str(supercell[1][1])+' '+str(supercell[2][2])+' '+str(cutoff)
+        os.system(sow_cmd)
+        sposcar = Poscar.from_file("3RD.SPOSCAR").structure
+        vis_dict = vasp_input_set.as_dict()
+        vis_dict['structure'] = sposcar.as_dict() # Changing KPOINTS
+        vis_new = vasp_input_set.__class__.from_dict(vis_dict)
+        rm_parameters = ['ISIF', 'LORBIT', 'MAGMOM']
+        for rmi in rm_parameters:
+            if rmi in vis_new.config_dict['INCAR']:
+                vis_new.config_dict['INCAR'].pop(rmi)
+        vis_new.incar.write_file('INCAR')
+        vis_new.kpoints.write_file('KPOINTS')
+        import glob
+        from atomate.common.firetasks.glue_tasks import PassCalcLocs
+        from atomate.vasp.firetasks.run_calc import RunVaspCustodian
+        from fireworks import Firework, FWAction, FileTransferTask
+        name = self["name"]
+        files = glob.glob("3RD.POSCAR.*")
+        calc_dir = self.get("path", os.getcwd())
+        fws = []
+        for f in files:
+            tasks = []
+            tasks.append(FileTransferTask({'files': [
+                                          {'src': os.path.join(calc_dir,'INCAR'), 'dest': 'INCAR'},
+                                          {'src': os.path.join(calc_dir,f), 'dest': 'POSCAR'},
+                                          {'src': os.path.join(calc_dir,'KPOINTS'), 'dest': 'KPOINTS'},
+                                          {'src': os.path.join(calc_dir,'POTCAR'), 'dest': 'POTCAR'}],
+                                          'mode': 'copy'}))
+            tasks.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+            tasks.append(PassCalcLocs(name=name+": "+f))
+            fw = Firework(tasks, name=name+": "+f)
+            fws.append(fw)
+        return FWAction(detours=fws)
