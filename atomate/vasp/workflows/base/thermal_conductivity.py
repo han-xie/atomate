@@ -4,6 +4,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 """
 This module defines the thermal conductivity workflow
+Current output (20170913): FORCE_CONSTANTS_2ND and FORCE_CONSTANTS_3RD
+They can be directly used to calculate thermal conductivity
 """
 
 from datetime import datetime

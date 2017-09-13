@@ -447,10 +447,11 @@ class WriteVaspThirdIOSet(FiretaskBase):
             pos_out.write(pos_in.readline())
         str_natom = pos_in.readline()
         try:
-            natom = int(str_natom)
+            num_atom = [int(nums) for nums in str_natom.split()]
         except ValueError:
             logger.warn('Vasp5.* format POSCAR should be used.')
         pos_out.write(str_natom)
+        natom = sum(num_atom)
         pos_out.write(pos_in.readline())
         for i_line in range(natom):
             str_pos = pos_in.readline()
