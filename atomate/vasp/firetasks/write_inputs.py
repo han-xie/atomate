@@ -429,17 +429,16 @@ class WriteVaspDispersionIOSet(FiretaskBase):
 @explicit_serialize
 class WriteVaspThirdIOSet(FiretaskBase):
     required_params = ["vasp_input_set", "supercell", "prev_calc", "third_cmd", "cutoff"]
-    optional_params = ["vasp_cmd", "name"]
     def run_task(self, fw_spec):
         vasp_input_set = self["vasp_input_set"]
         supercell = self["supercell"]
         prev_calc = self["prev_calc"]
-        vasp_cmd = env_chk(self["vasp_cmd"], fw_spec)
         third_cmd = env_chk(self["third_cmd"], fw_spec)
         cutoff = self["cutoff"]
         if not prev_calc:  # Otherwise, POSCAR already exists
             vasp_input_set.write_input(".")
         # ---Change POSCAR format---
+        # This is necessary because sometimes POSCAR format is not compatible with thirdorder
         os.system("mv POSCAR POSCAR_orig")
         pos_in = open('POSCAR_orig', 'r')
         pos_out = open('POSCAR', 'w')
@@ -460,6 +459,7 @@ class WriteVaspThirdIOSet(FiretaskBase):
             pos_out.write(pos_line)
         pos_in.close()
         pos_out.close()
+        # ---Finished changing POSCAR format---
         sow_cmd = third_cmd+' sow '+str(supercell[0][0])+' '+\
                   str(supercell[1][1])+' '+str(supercell[2][2])+' '+str(cutoff)
         os.system(sow_cmd)
@@ -473,10 +473,30 @@ class WriteVaspThirdIOSet(FiretaskBase):
                 vis_new.config_dict['INCAR'].pop(rmi)
         vis_new.incar.write_file('INCAR')
         vis_new.kpoints.write_file('KPOINTS')
+        os.system("mv INCAR INCAR_third")
+        # --- INCAR for computing WAVECAR ---
+        vis_wavecar_dict = vasp_input_set.as_dict()
+        uis_wavecar = vis_wavecar_dict.get("user_incar_settings", {})
+        uis_wavecar.update({'LWAVE': True})
+        vis_wavecar_dict.update({"user_incar_settings": uis_wavecar})
+        vis_wavecar_dict['structure'] = sposcar.as_dict() # Change KPOINTS
+        vis_wavecar = vasp_input_set.__class__.from_dict(vis_wavecar_dict)
+        for rmi in rm_parameters:
+            if rmi in vis_wavecar.config_dict['INCAR']:
+                vis_wavecar.config_dict['INCAR'].pop(rmi)
+        vis_wavecar.incar.write_file('INCAR')
+        os.system("mv POSCAR POSCAR_unitcell")
+        os.system("ln -s 3RD.SPOSCAR POSCAR")
+
+@explicit_serialize
+class WriteThirdStep(FiretaskBase):
+    required_params = ["vasp_cmd", "name"]
+    def run_task(self, fw_spec):
+        vasp_cmd = env_chk(self["vasp_cmd"], fw_spec)
         import glob
         from atomate.common.firetasks.glue_tasks import PassCalcLocs
         from atomate.vasp.firetasks.run_calc import RunVaspCustodian
-        from fireworks import Firework, FWAction, FileTransferTask
+        from fireworks import Firework, FWAction, FileTransferTask, ScriptTask
         name = self["name"]
         files = glob.glob("3RD.POSCAR.*")
         calc_dir = self.get("path", os.getcwd())
@@ -484,11 +504,12 @@ class WriteVaspThirdIOSet(FiretaskBase):
         for f in files:
             tasks = []
             tasks.append(FileTransferTask({'files': [
-                                          {'src': os.path.join(calc_dir,'INCAR'), 'dest': 'INCAR'},
+                                          {'src': os.path.join(calc_dir,'INCAR_third'), 'dest': 'INCAR'},
                                           {'src': os.path.join(calc_dir,f), 'dest': 'POSCAR'},
                                           {'src': os.path.join(calc_dir,'KPOINTS'), 'dest': 'KPOINTS'},
                                           {'src': os.path.join(calc_dir,'POTCAR'), 'dest': 'POTCAR'}],
                                           'mode': 'copy'}))
+            tasks.append(ScriptTask.from_str("ln -s "+os.path.join(calc_dir, 'WAVECAR')))
             tasks.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
             tasks.append(PassCalcLocs(name=name+": "+f))
             fw = Firework(tasks, name=name+": "+f)

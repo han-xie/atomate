@@ -452,11 +452,15 @@ class ThirdOrderFW(Firework):
         if parents:
             t.append(CopyVaspOutputs(calc_loc=True, contcar_to_poscar=True))
             t.append(PassCalcLocs(name="{}: root".format(name)))
-            t.append(WriteVaspThirdIOSet(vasp_input_set=vasp_input_set, supercell=supercell, cutoff=cutoff,
-                                         prev_calc=True, third_cmd=third_cmd, vasp_cmd=vasp_cmd, name=name))
+            t.append(WriteVaspThirdIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
+                                         cutoff=cutoff, prev_calc=True, third_cmd=third_cmd))
+            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+            t.append(WriteThirdStep(vasp_cmd=vasp_cmd, name=name))
         else:
             t.append(PassCalcLocs(name="{}: root".format(name)))
-            t.append(WriteVaspThirdIOSet(vasp_input_set=vasp_input_set, supercell=supercell, cutoff=cutoff,
-                                         prev_calc=False, third_cmd=third_cmd, vasp_cmd=vasp_cmd, name=name))
+            t.append(WriteVaspThirdIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
+                                         cutoff=cutoff, prev_calc=False, third_cmd=third_cmd))
+            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+            t.append(WriteThirdStep(vasp_cmd=vasp_cmd, name=name))
         name = "{}: root".format(name)
         super(ThirdOrderFW, self).__init__(t, parents=parents, name=name, **kwargs)

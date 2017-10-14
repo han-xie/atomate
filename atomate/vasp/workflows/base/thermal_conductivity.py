@@ -113,7 +113,7 @@ def get_wf_thermal_conductivity(structure, vasp_input_set=None, mode="force", va
         vis_third_dict.update({"user_kpoints_settings": user_kpoints_settings})
     uis_third = vis_third_dict.get("user_incar_settings", {})
     uis_third.update(uis_common)
-    uis_third.update({'IBRION': 2, 'ISMEAR': 0, 'ISPIN': 1, 'NSW': 0})
+    uis_third.update({'IBRION': 2, 'ISMEAR': 0, 'ISPIN': 1, 'ISTART': 1, 'NSW': 0})
     vis_third_dict.update({"user_incar_settings": uis_third})
     vis_third = vis_orig.__class__.from_dict(vis_third_dict)
     fw4 = ThirdOrderFW(structure=structure, vasp_input_set=vis_third, third_cmd=third_cmd,

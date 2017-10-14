@@ -669,7 +669,7 @@ class ThermalConductivityTask(FiretaskBase):
 #        os.system("cp "+os.path.join(root_path,'disp.yaml')+" .")
 
         os.system('cp '+fc2_path+'/FORCE_CONSTANTS FORCE_CONSTANTS_2ND')
-        os.system('cp '+root_path+'/POSCAR .')
+        os.system('cp '+root_path+'/POSCAR_unitcell POSCAR')
         path_fout = open('third_paths','w')
         for iname in sorted(paths):
             path_fout.write(os.path.join(paths[iname],'vasprun.xml\n'))
