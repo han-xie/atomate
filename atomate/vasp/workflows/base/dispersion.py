@@ -52,7 +52,7 @@ def get_wf_dispersion(structure, vasp_input_set=None, vasp_cmd="vasp", db_file=N
 
     fws, parent2 = [], []
     vis_orig = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
-    uis_common = {"EDIFF": 1E-08}
+    uis_common = {"EDIFF": 1E-08, "LREAL": False}
     tag = datetime.utcnow().strftime('%Y-%m-%d-%H-%M-%S-%f')
 
     if optimize_structure:

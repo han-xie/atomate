@@ -380,8 +380,8 @@ def wf_dispersion(structure, c=None):
     vasp_cmd = c.get("vasp_cmd", VASP_CMD)
     db_file = c.get("db_file", DB_FILE)
     mode = c.get("mode", "force") # This can be either "force" or "hessian"
-    supercell = c.get("supercell", [[3, 0, 0], [0, 3, 0], [0, 0, 3]])
-    user_kpoints_settings = c.get("user_kpoints_settings", {"grid_density": 7000})
+    supercell = c.get("supercell", [[4, 0, 0], [0, 4, 0], [0, 0, 4]])
+    user_kpoints_settings = c.get("user_kpoints_settings", {"grid_density": 1000})
     optimize_structure = c.get("optimize_structure", True)
 
     wf = get_wf_dispersion(structure, vasp_cmd=vasp_cmd, db_file=db_file, mode=mode,

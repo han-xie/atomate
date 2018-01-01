@@ -36,7 +36,7 @@ def get_wf_thermal_conductivity(structure, vasp_input_set=None, mode="force", va
         vasp_input_set (VaspInputSet): input set to use.
         mode (str): options:
             "force": calculate dispersion from forces.
-            "hessian" calculate dispersion from hessian.
+            "hessian": calculate dispersion from hessian.
         vasp_cmd (str): vasp command to run.
         third_cmd (str): Command to run thirdorder package.
         db_file (str): path to the db file.
@@ -54,24 +54,25 @@ def get_wf_thermal_conductivity(structure, vasp_input_set=None, mode="force", va
         logger.warn("The required 'phonopy' package is NOT installed.")
 
     fws, parent1 = [], []
-    vis_orig = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
-    uis_common = {"EDIFF": 1E-08}
+    uis_common = {"EDIFF": 1E-08, "LREAL": False}
     tag = datetime.utcnow().strftime('%Y-%m-%d-%H-%M-%S-%f')
 
     if optimize_structure:
-        vis_relax_dict = vis_orig.as_dict()
+        vis_relax_orig = MPRelaxSet(structure, force_gamma=True)
+        vis_relax_dict = vis_relax_orig.as_dict()
         uis_relax = vis_relax_dict.get("user_incar_settings", {})
         uis_relax.update(uis_common)
         vis_relax_dict.update({"user_incar_settings": uis_relax})
         if user_kpoints_settings:
             vis_relax_dict.update({"user_kpoints_settings": user_kpoints_settings})
-        vis_relax = vis_orig.__class__.from_dict(vis_relax_dict)
+        vis_relax = vis_relax_orig.__class__.from_dict(vis_relax_dict)
         fw1 = OptimizeFW(structure=structure, vasp_input_set=vis_relax, vasp_cmd=vasp_cmd,
                          db_file=db_file, name="{} structure optimization".format(tag))
         fws = [fw1]
         parent1 = [fw1]
 
-    vis_disp_dict = vis_orig.as_dict()
+    vis_FCs_orig = vasp_input_set or MPRelaxSet(structure, force_gamma=True)
+    vis_disp_dict = vis_FCs_orig.as_dict()
     if user_kpoints_settings:
         vis_disp_dict.update({"user_kpoints_settings": user_kpoints_settings})
     uis_disp = vis_disp_dict.get("user_incar_settings", {})
@@ -81,7 +82,7 @@ def get_wf_thermal_conductivity(structure, vasp_input_set=None, mode="force", va
     if mode == "force":
         uis_disp.update({'IBRION': 2, 'ISMEAR': 0, 'ISPIN': 1, 'NSW': 0})
         vis_disp_dict.update({"user_incar_settings": uis_disp})
-        vis_disp = vis_orig.__class__.from_dict(vis_disp_dict)
+        vis_disp = vis_FCs_orig.__class__.from_dict(vis_disp_dict)
         fw2 = DispersionFW(structure=structure, vasp_input_set=vis_disp, vasp_cmd=vasp_cmd,
                            db_file=db_file, mode=mode, parents=parent1, supercell=supercell,
                            name="{} dispersion".format(tag))
@@ -97,7 +98,7 @@ def get_wf_thermal_conductivity(structure, vasp_input_set=None, mode="force", va
     elif mode == "hessian":
         uis_disp.update({'IBRION': 6, 'ISMEAR': 0, 'ISPIN': 1, 'NSW': 1, 'POTIM': 0.015})
         vis_disp_dict.update({"user_incar_settings": uis_disp})
-        vis_disp = vis_orig.__class__.from_dict(vis_disp_dict)
+        vis_disp = vis_FCs_orig.__class__.from_dict(vis_disp_dict)
         fw2 = DispersionFW(structure=structure, vasp_input_set=vis_disp, vasp_cmd=vasp_cmd,
                            db_file=db_file, mode=mode, parents=parent1, supercell=supercell,
                            name="{} dispersion".format(tag))
@@ -108,14 +109,14 @@ def get_wf_thermal_conductivity(structure, vasp_input_set=None, mode="force", va
         raise ValueError('Dispersion workflow mode should be "force" or "hessian".')
 
 #   Start to run thirdorder
-    vis_third_dict = vis_orig.as_dict()
+    vis_third_dict = vis_FCs_orig.as_dict()
     if user_kpoints_settings:
         vis_third_dict.update({"user_kpoints_settings": user_kpoints_settings})
     uis_third = vis_third_dict.get("user_incar_settings", {})
     uis_third.update(uis_common)
     uis_third.update({'IBRION': 2, 'ISMEAR': 0, 'ISPIN': 1, 'ISTART': 1, 'NSW': 0})
     vis_third_dict.update({"user_incar_settings": uis_third})
-    vis_third = vis_orig.__class__.from_dict(vis_third_dict)
+    vis_third = vis_FCs_orig.__class__.from_dict(vis_third_dict)
     fw4 = ThirdOrderFW(structure=structure, vasp_input_set=vis_third, third_cmd=third_cmd,
                        vasp_cmd=vasp_cmd, db_file=db_file, parents=parent1,
                        supercell=supercell, cutoff=cutoff_3rd, name="{} thirdorder".format(tag))
