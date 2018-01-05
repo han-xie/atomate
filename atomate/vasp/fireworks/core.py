@@ -418,7 +418,7 @@ class DispersionFW(Firework):
             else:
                 t.append(WriteVaspDispersionIOSet(vasp_input_set=vasp_input_set, mode=mode, supercell=supercell,
                                                   prev_calc=False))
-            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, handler_group="no_handler", gzip_output=False))
             t.append(PassCalcLocs(name=name))
 #            t.append(VaspToDbTask(db_file=db_file, additional_fields={"task_label": name}))
             t.append(DispersionAnalysisTask(db_file=db_file, mode=mode, supercell=supercell))
@@ -454,13 +454,13 @@ class ThirdOrderFW(Firework):
             t.append(PassCalcLocs(name="{}: root".format(name)))
             t.append(WriteVaspThirdIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
                                          cutoff=cutoff, prev_calc=True, third_cmd=third_cmd))
-            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, handler_group="no_handler", gzip_output=False))
             t.append(WriteThirdStep(vasp_cmd=vasp_cmd, name=name))
         else:
             t.append(PassCalcLocs(name="{}: root".format(name)))
             t.append(WriteVaspThirdIOSet(vasp_input_set=vasp_input_set, supercell=supercell,
                                          cutoff=cutoff, prev_calc=False, third_cmd=third_cmd))
-            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+            t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, handler_group="no_handler", gzip_output=False))
             t.append(WriteThirdStep(vasp_cmd=vasp_cmd, name=name))
         name = "{}: root".format(name)
         super(ThirdOrderFW, self).__init__(t, parents=parents, name=name, **kwargs)

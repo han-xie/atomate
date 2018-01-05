@@ -418,7 +418,7 @@ class WriteVaspDispersionIOSet(FiretaskBase):
                                               'mode': 'copy'}))
 #            tasks.append(CopyVaspOutputs(calc_dir=calc_dir, additional_files="$ALL", contcar_to_poscar = False))
 #            tasks.append(ScriptTask.from_str("mv "+f+" POSCAR"))
-                tasks.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+                tasks.append(RunVaspCustodian(vasp_cmd=vasp_cmd, handler_group="no_handler", gzip_output=False))
                 tasks.append(PassCalcLocs(name=name+": "+f))
 #            tasks.append(ScriptTask.from_str("rm *.error *.out"))
                 fw = Firework(tasks, name=name+": "+f)
@@ -510,7 +510,7 @@ class WriteThirdStep(FiretaskBase):
                                           {'src': os.path.join(calc_dir,'POTCAR'), 'dest': 'POTCAR'}],
                                           'mode': 'copy'}))
             tasks.append(ScriptTask.from_str("ln -s "+os.path.join(calc_dir, 'WAVECAR')))
-            tasks.append(RunVaspCustodian(vasp_cmd=vasp_cmd, gzip_output=False))
+            tasks.append(RunVaspCustodian(vasp_cmd=vasp_cmd, handler_group="no_handler", gzip_output=False))
             tasks.append(PassCalcLocs(name=name+": "+f))
             fw = Firework(tasks, name=name+": "+f)
             fws.append(fw)
